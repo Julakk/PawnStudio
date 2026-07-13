@@ -1,0 +1,54 @@
+name: Build pawncc for Android arm64-v8a
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  build-pawncc-arm64:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout pawn-lang/compiler source
+        uses: actions/checkout@v4
+        with:
+          repository: pawn-lang/compiler
+          submodules: recursive
+          path: pawn-compiler-src
+
+      - name: Setup Android NDK
+        id: setup-ndk
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r26d
+
+      - name: Configure with CMake (Android arm64-v8a)
+        run: |
+          cd pawn-compiler-src
+          mkdir build-android
+          cd build-android
+          cmake .. \
+            -DCMAKE_TOOLCHAIN_FILE=${{ steps.setup-ndk.outputs.ndk-path }}/build/cmake/android.toolchain.cmake \
+            -DANDROID_ABI=arm64-v8a \
+            -DANDROID_PLATFORM=android-24 \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: |
+          cd pawn-compiler-src/build-android
+          cmake --build . --config Release -- -j$(nproc)
+
+      - name: List build output (debug helper)
+        run: |
+          find pawn-compiler-src/build-android -type f -executable -name "pawncc*"
+          find pawn-compiler-src/build-android -type f -name "*.so"
+
+      - name: Collect binary
+        run: |
+          mkdir -p output
+          find pawn-compiler-src/build-android -type f -executable -name "pawncc*" -exec cp {} output/pawncc-arm64-v8a \;
+
+      - name: Upload pawncc arm64-v8a artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pawncc-arm64-v8a
+          path: output/pawncc-arm64-v8a
