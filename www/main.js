@@ -55,7 +55,7 @@ function initEditor() {
 }
 
 function getLanguageForFile(filename) {
-  if (filename.endsWith(".pwn") || filename.endsWith(".inc")) return "plaintext"; // ganti "pawn" kalau custom language udah didaftarkan
+  if (filename.endsWith(".pwn") || filename.endsWith(".inc")) return "pawn";
   if (filename.endsWith(".js")) return "javascript";
   if (filename.endsWith(".json")) return "json";
   if (filename.endsWith(".css")) return "css";
