@@ -10,6 +10,7 @@
   <div id="app">
     <!-- Top bar -->
     <div id="topbar">
+      <button id="btn-toggle-sidebar" title="Explorer">☰</button>
       <span id="app-title">PawnStudio</span>
       <div id="topbar-actions">
         <button id="btn-run" title="Run">▶</button>
@@ -17,18 +18,38 @@
       </div>
     </div>
 
-    <!-- Editor container -->
-    <div id="editor-container"></div>
+    <div id="main-area">
+      <!-- Sidebar: File Explorer -->
+      <div id="sidebar">
+        <div id="sidebar-header">
+          <span>EXPLORER</span>
+          <div id="sidebar-actions">
+            <button id="btn-new-file" title="New File">＋</button>
+            <button id="btn-new-folder" title="New Folder">📁</button>
+          </div>
+        </div>
+        <div id="file-tree"></div>
+      </div>
+
+      <!-- Editor Area -->
+      <div id="editor-area">
+        <!-- Tab bar -->
+        <div id="tabbar"></div>
+        <!-- Editor container -->
+        <div id="editor-container"></div>
+      </div>
+    </div>
 
     <!-- Bottom status bar -->
     <div id="statusbar">
-      <span id="status-file">untitled.pwn</span>
+      <span id="status-file">no file open</span>
       <span id="status-lang">PAWN</span>
     </div>
   </div>
 
   <!-- Monaco loader (CDN, AMD) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.47.0/min/vs/loader.min.js"></script>
+  <script src="fileManager.js"></script>
   <script src="main.js"></script>
 </body>
 </html>
