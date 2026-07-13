@@ -13,7 +13,6 @@ jobs:
         with:
           repository: pawn-lang/compiler
           submodules: recursive
-          path: pawn-compiler-src
 
       - name: Setup Android NDK
         id: setup-ndk
@@ -23,7 +22,6 @@ jobs:
 
       - name: Configure with CMake (Android arm64-v8a)
         run: |
-          cd pawn-compiler-src
           mkdir build-android
           cd build-android
           cmake .. \
@@ -34,18 +32,18 @@ jobs:
 
       - name: Build
         run: |
-          cd pawn-compiler-src/build-android
+          cd build-android
           cmake --build . --config Release -- -j$(nproc)
 
       - name: List build output (debug helper)
         run: |
-          find pawn-compiler-src/build-android -type f -executable -name "pawncc*"
-          find pawn-compiler-src/build-android -type f -name "*.so"
+          find build-android -type f -executable -name "pawncc*"
+          find build-android -type f -name "*.so"
 
       - name: Collect binary
         run: |
           mkdir -p output
-          find pawn-compiler-src/build-android -type f -executable -name "pawncc*" -exec cp {} output/pawncc-arm64-v8a \;
+          find build-android -type f -executable -name "pawncc*" -exec cp {} output/pawncc-arm64-v8a \;
 
       - name: Upload pawncc arm64-v8a artifact
         uses: actions/upload-artifact@v4
