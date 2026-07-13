@@ -23,6 +23,7 @@ window.MonacoEnvironment = {
 
 require(["vs/editor/editor.main"], function () {
   registerPawnLanguage();
+  registerPawnCompletion();
   FileManager.init();
   initEditor();
   renderFileTree();
