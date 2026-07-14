@@ -334,7 +334,8 @@ function runCompiler() {
     return;
   }
 
-  PawnCompiler.compile({ source: code })
+  const fileName = activeTabPath.split("/").pop();
+  PawnCompiler.compile({ source: code, fileName: fileName })
     .then((result) => {
       let output = "";
       if (result.stdout) output += result.stdout;

@@ -30,6 +30,14 @@ public class PawnCompilerPlugin extends Plugin {
         return dir;
     }
 
+    private File compiledOutputDir() {
+        // Penyimpanan PERMANEN, gak kena auto-clear sistem seperti cacheDir.
+        // Lokasi: Android/data/xyz.ahmadhosting.pawnstudio/files/compiled/
+        File dir = new File(getContext().getExternalFilesDir(null), "compiled");
+        if (!dir.exists()) dir.mkdirs();
+        return dir;
+    }
+
     private void ensureIncludesExtracted() throws Exception {
         File dir = includeDir();
         String[] assetFiles = getContext().getAssets().list("pawno/include");
@@ -62,9 +70,18 @@ public class PawnCompilerPlugin extends Plugin {
         return sb.toString();
     }
 
+    private String sanitizeFileName(String name) {
+        String base = name.replaceAll("\\.pwn$", "").replaceAll("\\.inc$", "");
+        base = base.replaceAll("[^a-zA-Z0-9_\\-]", "_");
+        if (base.isEmpty()) base = "main";
+        return base;
+    }
+
     @PluginMethod
     public void compile(PluginCall call) {
         String sourceCode = call.getString("source");
+        String rawFileName = call.getString("fileName", "main");
+
         if (sourceCode == null) {
             call.reject("Parameter 'source' wajib diisi");
             return;
@@ -81,15 +98,18 @@ public class PawnCompilerPlugin extends Plugin {
                 return;
             }
 
+            String fileName = sanitizeFileName(rawFileName);
+
+            // Source .pwn sementara boleh di cache (cuma dipakai pas compile)
             File workDir = new File(getContext().getCacheDir(), "pawn-compile");
             if (!workDir.exists()) workDir.mkdirs();
-
-            File sourceFile = new File(workDir, "main.pwn");
+            File sourceFile = new File(workDir, fileName + ".pwn");
             FileWriter writer = new FileWriter(sourceFile);
             writer.write(sourceCode);
             writer.close();
 
-            File outputAmx = new File(workDir, "main.amx");
+            // Output .amx WAJIB ke folder permanen
+            File outputAmx = new File(compiledOutputDir(), fileName + ".amx");
 
             ProcessBuilder pb = new ProcessBuilder(
                     binFile.getAbsolutePath(),
