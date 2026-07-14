@@ -8,50 +8,19 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.io.FileWriter;
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 
 @CapacitorPlugin(name = "PawnCompiler")
 public class PawnCompilerPlugin extends Plugin {
 
     private static final String TAG = "PawnCompiler";
-    private static final String BIN_NAME = "pawncc-arm64-v8a";
-    private static final String LIB_NAME = "libpawnc-arm64-v8a.so";
+    private static final String BIN_NAME = "libpawncc.so";
 
-    private File binDir() {
-        File dir = new File(getContext().getFilesDir(), "pawncc-bin");
-        if (!dir.exists()) dir.mkdirs();
-        return dir;
-    }
-
-    private void copyAsset(String assetPath, File outFile) throws Exception {
-        InputStream input = getContext().getAssets().open(assetPath);
-        FileOutputStream output = new FileOutputStream(outFile);
-        byte[] buffer = new byte[4096];
-        int read;
-        while ((read = input.read(buffer)) != -1) {
-            output.write(buffer, 0, read);
-        }
-        output.close();
-        input.close();
-    }
-
-    private void ensureBinariesExtracted() throws Exception {
-        File dir = binDir();
-        File binFile = new File(dir, BIN_NAME);
-        File libFile = new File(dir, LIB_NAME);
-
-        if (!binFile.exists()) {
-            copyAsset("pawncc/" + BIN_NAME, binFile);
-            binFile.setExecutable(true, false);
-        }
-        if (!libFile.exists()) {
-            copyAsset("pawncc/" + LIB_NAME, libFile);
-            libFile.setExecutable(true, false);
-        }
+    private String nativeLibDir() {
+        return getContext().getApplicationInfo().nativeLibraryDir;
     }
 
     private String readStream(InputStream is) throws Exception {
@@ -74,9 +43,13 @@ public class PawnCompilerPlugin extends Plugin {
         }
 
         try {
-            ensureBinariesExtracted();
-            File dir = binDir();
-            File binFile = new File(dir, BIN_NAME);
+            String libDir = nativeLibDir();
+            File binFile = new File(libDir, BIN_NAME);
+
+            if (!binFile.exists()) {
+                call.reject("Binary compiler tidak ditemukan di: " + binFile.getAbsolutePath());
+                return;
+            }
 
             File workDir = new File(getContext().getCacheDir(), "pawn-compile");
             if (!workDir.exists()) workDir.mkdirs();
@@ -93,7 +66,7 @@ public class PawnCompilerPlugin extends Plugin {
                     sourceFile.getAbsolutePath(),
                     "-o" + outputAmx.getAbsolutePath()
             );
-            pb.environment().put("LD_LIBRARY_PATH", dir.getAbsolutePath());
+            pb.environment().put("LD_LIBRARY_PATH", libDir);
             pb.directory(workDir);
 
             Process process = pb.start();
