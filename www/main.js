@@ -317,6 +317,8 @@ function closeSidebarOnMobile() {
 
 // ============ Compiler Integration ============
 
+let errorLineDecorations = [];
+
 function runCompiler() {
   if (!activeTabPath) {
     alert("Buka file dulu sebelum Run.");
@@ -325,40 +327,113 @@ function runCompiler() {
 
   const tab = openTabs.find((t) => t.path === activeTabPath);
   const code = tab.model.getValue();
+  const fileName = activeTabPath.split("/").pop();
 
-  showOutputPanel("Compiling...");
+  clearErrorHighlight();
+  showOutputPanel();
+  setOutputLines([{ text: "Compiling " + fileName + "...", type: "info" }]);
 
   const PawnCompiler = window.Capacitor?.Plugins?.PawnCompiler;
   if (!PawnCompiler) {
-    showOutputPanel("Error: plugin PawnCompiler tidak ditemukan. Pastikan app dijalankan sebagai APK (bukan browser biasa).");
+    setOutputLines([{ text: "Error: plugin PawnCompiler tidak ditemukan. Pastikan app dijalankan sebagai APK (bukan browser biasa).", type: "error" }]);
     return;
   }
 
-  const fileName = activeTabPath.split("/").pop();
   PawnCompiler.compile({ source: code, fileName: fileName })
     .then((result) => {
-      let output = "";
-      if (result.stdout) output += result.stdout;
-      if (result.stderr) output += "\\n" + result.stderr;
+      const lines = [];
+      const rawOutput = (result.stdout || "") + "\n" + (result.stderr || "");
+
+      rawOutput.split("\n").forEach((line) => {
+        if (!line.trim()) return;
+        const errorMatch = line.match(/\((\d+)\)\s*:\s*error/i);
+        const warningMatch = line.match(/\((\d+)\)\s*:\s*warning/i);
+
+        if (errorMatch) {
+          lines.push({ text: line, type: "error", lineNumber: parseInt(errorMatch[1], 10) });
+        } else if (warningMatch) {
+          lines.push({ text: line, type: "warning", lineNumber: parseInt(warningMatch[1], 10) });
+        } else {
+          lines.push({ text: line, type: "plain" });
+        }
+      });
+
       if (result.success) {
-        output += `\\n\\n✅ Compile berhasil (${result.amxSize} bytes) -> ${result.amxPath}`;
+        lines.push({ text: `✅ Compile berhasil (${result.amxSize} bytes)`, type: "success" });
+        lines.push({ text: result.amxPath, type: "info" });
       } else {
-        output += `\\n\\n❌ Compile gagal (exit code ${result.exitCode})`;
+        lines.push({ text: `❌ Compile gagal (exit code ${result.exitCode})`, type: "error" });
       }
-      showOutputPanel(output);
+
+      setOutputLines(lines);
     })
     .catch((err) => {
-      showOutputPanel("Error menjalankan compiler: " + err.message);
+      setOutputLines([{ text: "Error menjalankan compiler: " + err.message, type: "error" }]);
     });
 }
 
-function showOutputPanel(text) {
+function showOutputPanel() {
   let panel = document.getElementById("output-panel");
   if (!panel) {
     panel = document.createElement("div");
     panel.id = "output-panel";
-    panel.style.cssText = "position:absolute;bottom:24px;left:0;right:0;max-height:35%;overflow-y:auto;background:#1e1e1e;border-top:1px solid #3c3c3c;color:#d4d4d4;font-family:monospace;font-size:12px;padding:10px;white-space:pre-wrap;z-index:20;";
+    panel.innerHTML = `
+      <div id="output-panel-header">
+        <span>OUTPUT</span>
+        <button id="output-panel-close">×</button>
+      </div>
+      <div id="output-panel-body"></div>
+    `;
     document.getElementById("main-area").appendChild(panel);
+    document.getElementById("output-panel-close").addEventListener("click", () => {
+      panel.classList.add("hidden");
+      clearErrorHighlight();
+    });
   }
-  panel.textContent = text;
+  panel.classList.remove("hidden");
+}
+
+function setOutputLines(lines) {
+  const body = document.getElementById("output-panel-body");
+  if (!body) return;
+  body.innerHTML = "";
+
+  lines.forEach((line) => {
+    const el = document.createElement("div");
+    el.className = "output-line " + line.type;
+    el.textContent = line.text;
+
+    if (line.lineNumber) {
+      el.addEventListener("click", () => jumpToLine(line.lineNumber));
+    }
+
+    body.appendChild(el);
+  });
+
+  body.scrollTop = body.scrollHeight;
+}
+
+function jumpToLine(lineNumber) {
+  if (!monacoEditor) return;
+
+  monacoEditor.revealLineInCenter(lineNumber);
+  monacoEditor.setPosition({ lineNumber: lineNumber, column: 1 });
+  monacoEditor.focus();
+
+  clearErrorHighlight();
+  errorLineDecorations = monacoEditor.deltaDecorations([], [
+    {
+      range: new monaco.Range(lineNumber, 1, lineNumber, 1),
+      options: {
+        isWholeLine: true,
+        className: "error-line-highlight",
+      },
+    },
+  ]);
+}
+
+function clearErrorHighlight() {
+  if (monacoEditor && errorLineDecorations.length > 0) {
+    errorLineDecorations = monacoEditor.deltaDecorations(errorLineDecorations, []);
+  }
 }

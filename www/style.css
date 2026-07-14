@@ -283,3 +283,95 @@ html, body {
     box-shadow: 2px 0 8px rgba(0,0,0,0.4);
   }
 }
+
+/* ============ Output / Console Panel ============ */
+#output-panel {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 35%;
+  min-height: 120px;
+  background-color: #181818;
+  border-top: 1px solid #3c3c3c;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+}
+
+#output-panel.hidden {
+  display: none;
+}
+
+#output-panel-header {
+  height: 30px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  background-color: #252526;
+  border-bottom: 1px solid #3c3c3c;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #a3a3a3;
+}
+
+#output-panel-close {
+  background: none;
+  border: none;
+  color: #a3a3a3;
+  font-size: 16px;
+  width: 24px;
+  height: 24px;
+}
+
+#output-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 10px;
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.output-line {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.output-line.error {
+  color: #f48771;
+  cursor: pointer;
+}
+
+.output-line.error:active {
+  background-color: #37373d;
+}
+
+.output-line.warning {
+  color: #cca700;
+  cursor: pointer;
+}
+
+.output-line.warning:active {
+  background-color: #37373d;
+}
+
+.output-line.success {
+  color: #89d185;
+  font-weight: 600;
+}
+
+.output-line.info {
+  color: #858585;
+}
+
+.output-line.plain {
+  color: #d4d4d4;
+}
+
+.error-line-highlight {
+  background-color: rgba(244, 135, 113, 0.15);
+}
