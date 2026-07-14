@@ -37,23 +37,27 @@ jobs:
             -DCMAKE_EXE_LINKER_FLAGS="-L${{ github.workspace }}/stub-libs" \
             -DCMAKE_SHARED_LINKER_FLAGS="-L${{ github.workspace }}/stub-libs"
 
-      - name: Build pawncc only
+      - name: Build pawncc + libpawnc
         run: |
           cd build-android
           cmake --build . --config Release --target pawncc -- -j$(nproc)
+          cmake --build . --config Release --target pawnc -- -j$(nproc)
 
       - name: List build output (debug helper)
         run: |
           find build-android -type f -executable -name "pawncc*"
-          find build-android -type f -name "*.so"
+          find build-android -type f -name "libpawnc.so"
 
-      - name: Collect binary
+      - name: Collect binary + shared library
         run: |
           mkdir -p output
           find build-android -type f -executable -name "pawncc*" -exec cp {} output/pawncc-arm64-v8a \;
+          find build-android -type f -name "libpawnc.so" -exec cp {} output/libpawnc-arm64-v8a.so \;
 
-      - name: Upload pawncc arm64-v8a artifact
+      - name: Upload pawncc + libpawnc artifact
         uses: actions/upload-artifact@v4
         with:
-          name: pawncc-arm64-v8a
-          path: output/pawncc-arm64-v8a
+          name: pawncc-arm64-v8a-bundle
+          path: |
+            output/pawncc-arm64-v8a
+            output/libpawnc-arm64-v8a.so
