@@ -8,6 +8,7 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -21,6 +22,33 @@ public class PawnCompilerPlugin extends Plugin {
 
     private String nativeLibDir() {
         return getContext().getApplicationInfo().nativeLibraryDir;
+    }
+
+    private File includeDir() {
+        File dir = new File(getContext().getFilesDir(), "pawno/include");
+        if (!dir.exists()) dir.mkdirs();
+        return dir;
+    }
+
+    private void ensureIncludesExtracted() throws Exception {
+        File dir = includeDir();
+        String[] assetFiles = getContext().getAssets().list("pawno/include");
+        if (assetFiles == null) return;
+
+        for (String name : assetFiles) {
+            File outFile = new File(dir, name);
+            if (outFile.exists()) continue;
+
+            InputStream input = getContext().getAssets().open("pawno/include/" + name);
+            FileOutputStream output = new FileOutputStream(outFile);
+            byte[] buffer = new byte[4096];
+            int read;
+            while ((read = input.read(buffer)) != -1) {
+                output.write(buffer, 0, read);
+            }
+            output.close();
+            input.close();
+        }
     }
 
     private String readStream(InputStream is) throws Exception {
@@ -43,6 +71,8 @@ public class PawnCompilerPlugin extends Plugin {
         }
 
         try {
+            ensureIncludesExtracted();
+
             String libDir = nativeLibDir();
             File binFile = new File(libDir, BIN_NAME);
 
@@ -64,7 +94,8 @@ public class PawnCompilerPlugin extends Plugin {
             ProcessBuilder pb = new ProcessBuilder(
                     binFile.getAbsolutePath(),
                     sourceFile.getAbsolutePath(),
-                    "-o" + outputAmx.getAbsolutePath()
+                    "-o" + outputAmx.getAbsolutePath(),
+                    "-i" + includeDir().getAbsolutePath()
             );
             pb.environment().put("LD_LIBRARY_PATH", libDir);
             pb.directory(workDir);
