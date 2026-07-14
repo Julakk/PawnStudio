@@ -60,6 +60,13 @@ function initEditor() {
   });
 
   document.getElementById("editor-container").classList.add("empty");
+
+  monacoEditor.onDidChangeCursorPosition((e) => {
+    const statusCursor = document.getElementById("status-cursor");
+    if (statusCursor) {
+      statusCursor.textContent = `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
+    }
+  });
 }
 
 function getLanguageForFile(filename) {
@@ -100,9 +107,39 @@ function openFile(path) {
   document.getElementById("status-file").textContent = path;
   document.getElementById("status-lang").textContent = getLanguageForFile(path).toUpperCase();
 
+  updateBreadcrumb(path);
   renderTabs();
   renderFileTree();
   closeSidebarOnMobile();
+}
+
+function updateBreadcrumb(path) {
+  const breadcrumb = document.getElementById("breadcrumb");
+  if (!breadcrumb) return;
+  const parts = path.split("/");
+  breadcrumb.innerHTML = "";
+
+  const root = document.createElement("span");
+  root.className = "crumb";
+  root.textContent = "PawnStudio";
+  breadcrumb.appendChild(root);
+
+  parts.forEach((part) => {
+    const sep = document.createElement("span");
+    sep.className = "crumb-sep";
+    sep.textContent = "\u203a";
+    breadcrumb.appendChild(sep);
+
+    const crumb = document.createElement("span");
+    crumb.className = "crumb";
+    crumb.textContent = part;
+    breadcrumb.appendChild(crumb);
+  });
+}
+
+function getFileExt(filename) {
+  const idx = filename.lastIndexOf(".");
+  return idx === -1 ? "" : filename.substring(idx + 1).toLowerCase();
 }
 
 function closeTab(path, event) {
@@ -162,11 +199,17 @@ function renderTabs() {
 
   openTabs.forEach((tab) => {
     const el = document.createElement("div");
+    const fileName = tab.path.split("/").pop();
     el.className = "tab-item" + (tab.path === activeTabPath ? " active" : "") + (tab.dirty ? " dirty" : "");
+    el.setAttribute("data-ext", getFileExt(fileName));
+
+    const icon = document.createElement("span");
+    icon.className = "tab-icon";
+    icon.innerHTML = ICON_FILE;
 
     const name = document.createElement("span");
     name.className = "tab-name";
-    name.textContent = tab.path.split("/").pop();
+    name.textContent = fileName;
 
     const dot = document.createElement("span");
     dot.className = "tab-dot";
@@ -176,6 +219,7 @@ function renderTabs() {
     close.innerHTML = ICON_CLOSE;
     close.addEventListener("click", (e) => closeTab(tab.path, e));
 
+    el.appendChild(icon);
     el.appendChild(name);
     el.appendChild(dot);
     el.appendChild(close);
@@ -222,6 +266,7 @@ function renderNode(node, container) {
       } else {
         const fileEl = document.createElement("div");
         fileEl.className = "file-item" + (child.path === activeTabPath ? " active" : "");
+        fileEl.setAttribute("data-ext", getFileExt(child.name));
         fileEl.innerHTML = `<span class="icon">${ICON_FILE}</span><span>${escapeHtml(child.name)}</span><span class="file-delete">${ICON_TRASH}</span>`;
 
         fileEl.addEventListener("click", (e) => {
@@ -306,6 +351,16 @@ function bindGlobalActions() {
 
   document.getElementById("btn-toggle-sidebar").addEventListener("click", () => {
     document.getElementById("sidebar").classList.toggle("hidden");
+  });
+
+  document.getElementById("activity-explorer").addEventListener("click", () => {
+    document.getElementById("sidebar").classList.toggle("hidden");
+    document.getElementById("activity-explorer").classList.add("active");
+    document.getElementById("activity-search").classList.remove("active");
+  });
+
+  document.getElementById("activity-settings").addEventListener("click", () => {
+    document.getElementById("settings-overlay").classList.remove("hidden");
   });
 
   // Ctrl+S / keyboard save

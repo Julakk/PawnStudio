@@ -28,6 +28,20 @@
     </div>
 
     <div id="main-area">
+      <!-- Activity Bar -->
+      <div id="activity-bar">
+        <button id="activity-explorer" class="activity-btn active" title="Explorer">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        </button>
+        <button id="activity-search" class="activity-btn" title="Search">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+        <div class="activity-spacer"></div>
+        <button id="activity-settings" class="activity-btn" title="Settings">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+
       <!-- Sidebar: File Explorer -->
       <div id="sidebar">
         <div id="sidebar-header">
@@ -48,6 +62,8 @@
       <div id="editor-area">
         <!-- Tab bar -->
         <div id="tabbar"></div>
+        <!-- Breadcrumb -->
+        <div id="breadcrumb"></div>
         <!-- Editor container -->
         <div id="editor-container"></div>
       </div>
@@ -55,8 +71,13 @@
 
     <!-- Bottom status bar -->
     <div id="statusbar">
-      <span id="status-file">no file open</span>
-      <span id="status-lang">PAWN</span>
+      <div id="statusbar-left">
+        <span id="status-file">no file open</span>
+      </div>
+      <div id="statusbar-right">
+        <span id="status-cursor">Ln 1, Col 1</span>
+        <span id="status-lang">PAWN</span>
+      </div>
     </div>
   </div>
 

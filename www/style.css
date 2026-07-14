@@ -457,3 +457,104 @@ html, body {
   width: 20px;
   height: 20px;
 }
+
+/* ============ Activity Bar ============ */
+#activity-bar {
+  width: 48px;
+  flex-shrink: 0;
+  background-color: #333333;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 8px;
+  gap: 4px;
+}
+
+.activity-btn {
+  width: 48px;
+  height: 48px;
+  background: none;
+  border: none;
+  color: #858585;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.activity-btn.active {
+  color: #ffffff;
+}
+
+.activity-btn.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  background-color: #ffffff;
+}
+
+.activity-btn:active {
+  color: #ffffff;
+}
+
+.activity-spacer {
+  flex: 1;
+}
+
+/* ============ Breadcrumb ============ */
+#breadcrumb {
+  height: 26px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  background-color: #1e1e1e;
+  border-bottom: 1px solid #2d2d2d;
+  color: #a0a0a0;
+  font-size: 12px;
+  gap: 4px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+#breadcrumb .crumb {
+  color: #cccccc;
+}
+
+#breadcrumb .crumb-sep {
+  color: #6b6b6b;
+}
+
+/* ============ Status bar: left/right groups ============ */
+#statusbar-left, #statusbar-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 100%;
+}
+
+#status-cursor {
+  opacity: 0.9;
+}
+
+/* ============ File icon colors per tipe (VSCode-style) ============ */
+.file-item .icon svg { color: #519aba; } /* default: biru muda */
+.file-item[data-ext="pwn"] .icon svg { color: #9b6bd6; } /* ungu, sesuai brand */
+.file-item[data-ext="inc"] .icon svg { color: #7fb3e0; }
+.file-item[data-ext="js"] .icon svg { color: #cbcb41; }
+.file-item[data-ext="json"] .icon svg { color: #cbcb41; }
+.file-item[data-ext="css"] .icon svg { color: #519aba; }
+.file-item[data-ext="html"] .icon svg { color: #e37933; }
+
+.tab-item .tab-icon svg { color: #519aba; }
+.tab-item[data-ext="pwn"] .tab-icon svg { color: #9b6bd6; }
+.tab-item[data-ext="inc"] .tab-icon svg { color: #7fb3e0; }
+
+.tab-item .tab-icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
