@@ -15,6 +15,7 @@
       <div id="topbar-actions">
         <button id="btn-run" title="Run">▶</button>
         <button id="btn-save" title="Save">💾</button>
+        <button id="btn-settings" title="Settings">⚙️</button>
       </div>
     </div>
 
@@ -44,6 +45,39 @@
     <div id="statusbar">
       <span id="status-file">no file open</span>
       <span id="status-lang">PAWN</span>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settings-overlay" class="hidden">
+    <div id="settings-modal">
+      <div id="settings-header">
+        <span>SETTINGS</span>
+        <button id="btn-close-settings">×</button>
+      </div>
+      <div id="settings-body">
+        <div class="setting-row">
+          <label>Font Size</label>
+          <select id="setting-font-size">
+            <option value="12">Kecil (12px)</option>
+            <option value="14">Sedang (14px)</option>
+            <option value="16">Besar (16px)</option>
+            <option value="18">Extra Besar (18px)</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label>Tema Editor</label>
+          <select id="setting-theme">
+            <option value="vs-dark">Dark</option>
+            <option value="vs">Light</option>
+            <option value="hc-black">High Contrast</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label>Word Wrap</label>
+          <input type="checkbox" id="setting-wordwrap" checked />
+        </div>
+      </div>
     </div>
   </div>
 

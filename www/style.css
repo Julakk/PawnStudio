@@ -375,3 +375,85 @@ html, body {
 .error-line-highlight {
   background-color: rgba(244, 135, 113, 0.15);
 }
+
+/* ============ Settings Modal ============ */
+#settings-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#settings-overlay.hidden {
+  display: none;
+}
+
+#settings-modal {
+  width: 85%;
+  max-width: 360px;
+  background-color: #252526;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+
+#settings-header {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  background-color: #2d2d2d;
+  color: #d4d4d4;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+}
+
+#btn-close-settings {
+  background: none;
+  border: none;
+  color: #a3a3a3;
+  font-size: 18px;
+  width: 26px;
+  height: 26px;
+}
+
+#settings-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.setting-row label {
+  color: #cccccc;
+  font-size: 13px;
+}
+
+.setting-row select {
+  background-color: #3c3c3c;
+  color: #d4d4d4;
+  border: 1px solid #4c4c4c;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+.setting-row input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+}

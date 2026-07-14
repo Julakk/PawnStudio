@@ -28,6 +28,7 @@ require(["vs/editor/editor.main"], function () {
   initEditor();
   renderFileTree();
   bindGlobalActions();
+  initSettingsUI();
 
   // Auto-buka file pertama yang ada
   const tree = FileManager.listTree();
@@ -436,4 +437,70 @@ function clearErrorHighlight() {
   if (monacoEditor && errorLineDecorations.length > 0) {
     errorLineDecorations = monacoEditor.deltaDecorations(errorLineDecorations, []);
   }
+}
+
+// ============ Settings ============
+
+const SETTINGS_KEY = "pawnstudio_settings";
+
+function loadSettings() {
+  const raw = localStorage.getItem(SETTINGS_KEY);
+  const defaults = { fontSize: 14, theme: "vs-dark", wordWrap: true };
+  if (!raw) return defaults;
+  try {
+    return { ...defaults, ...JSON.parse(raw) };
+  } catch {
+    return defaults;
+  }
+}
+
+function saveSettings(settings) {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+}
+
+function applySettings(settings) {
+  if (!monacoEditor) return;
+  monacoEditor.updateOptions({
+    fontSize: settings.fontSize,
+    wordWrap: settings.wordWrap ? "on" : "off",
+  });
+  monaco.editor.setTheme(settings.theme);
+}
+
+function initSettingsUI() {
+  const settings = loadSettings();
+
+  document.getElementById("setting-font-size").value = settings.fontSize;
+  document.getElementById("setting-theme").value = settings.theme;
+  document.getElementById("setting-wordwrap").checked = settings.wordWrap;
+
+  applySettings(settings);
+
+  document.getElementById("btn-settings").addEventListener("click", () => {
+    document.getElementById("settings-overlay").classList.remove("hidden");
+  });
+
+  document.getElementById("btn-close-settings").addEventListener("click", () => {
+    document.getElementById("settings-overlay").classList.add("hidden");
+  });
+
+  document.getElementById("settings-overlay").addEventListener("click", (e) => {
+    if (e.target.id === "settings-overlay") {
+      document.getElementById("settings-overlay").classList.add("hidden");
+    }
+  });
+
+  function updateAndSave() {
+    const newSettings = {
+      fontSize: parseInt(document.getElementById("setting-font-size").value, 10),
+      theme: document.getElementById("setting-theme").value,
+      wordWrap: document.getElementById("setting-wordwrap").checked,
+    };
+    saveSettings(newSettings);
+    applySettings(newSettings);
+  }
+
+  document.getElementById("setting-font-size").addEventListener("change", updateAndSave);
+  document.getElementById("setting-theme").addEventListener("change", updateAndSave);
+  document.getElementById("setting-wordwrap").addEventListener("change", updateAndSave);
 }
