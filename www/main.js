@@ -2,6 +2,13 @@
 // PawnStudio - Editor Core
 // ==============================
 
+
+// ============ SVG Icons ============
+const ICON_FILE = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+const ICON_FOLDER = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
+const ICON_TRASH = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
+const ICON_CLOSE = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+
 const MONACO_CDN = "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.47.0/min/vs";
 
 let monacoEditor = null;
@@ -166,7 +173,7 @@ function renderTabs() {
 
     const close = document.createElement("span");
     close.className = "tab-close";
-    close.textContent = "×";
+    close.innerHTML = ICON_CLOSE;
     close.addEventListener("click", (e) => closeTab(tab.path, e));
 
     el.appendChild(name);
@@ -200,7 +207,7 @@ function renderNode(node, container) {
       if (child.type === "folder") {
         const folderEl = document.createElement("div");
         folderEl.className = "folder-item";
-        folderEl.innerHTML = `<span class="icon">📁</span><span>${escapeHtml(child.name)}</span>`;
+        folderEl.innerHTML = `<span class="icon">${ICON_FOLDER}</span><span>${escapeHtml(child.name)}</span>`;
 
         const childrenEl = document.createElement("div");
         childrenEl.className = "folder-children";
@@ -215,7 +222,7 @@ function renderNode(node, container) {
       } else {
         const fileEl = document.createElement("div");
         fileEl.className = "file-item" + (child.path === activeTabPath ? " active" : "");
-        fileEl.innerHTML = `<span class="icon">📄</span><span>${escapeHtml(child.name)}</span><span class="file-delete">🗑</span>`;
+        fileEl.innerHTML = `<span class="icon">${ICON_FILE}</span><span>${escapeHtml(child.name)}</span><span class="file-delete">${ICON_TRASH}</span>`;
 
         fileEl.addEventListener("click", (e) => {
           if (e.target.classList.contains("file-delete")) return;
