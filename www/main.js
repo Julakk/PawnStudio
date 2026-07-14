@@ -288,10 +288,7 @@ function handleDeleteEntry(path) {
 
 function bindGlobalActions() {
   document.getElementById("btn-run").addEventListener("click", () => {
-    if (!activeTabPath) return;
-    const tab = openTabs.find((t) => t.path === activeTabPath);
-    console.log("RUN:", tab.model.getValue());
-    // TODO: kirim ke compiler backend
+    runCompiler();
   });
 
   document.getElementById("btn-save").addEventListener("click", saveActiveTab);
@@ -316,4 +313,51 @@ function closeSidebarOnMobile() {
   if (window.innerWidth <= 480) {
     document.getElementById("sidebar").classList.add("hidden");
   }
+}
+
+// ============ Compiler Integration ============
+
+function runCompiler() {
+  if (!activeTabPath) {
+    alert("Buka file dulu sebelum Run.");
+    return;
+  }
+
+  const tab = openTabs.find((t) => t.path === activeTabPath);
+  const code = tab.model.getValue();
+
+  showOutputPanel("Compiling...");
+
+  const PawnCompiler = window.Capacitor?.Plugins?.PawnCompiler;
+  if (!PawnCompiler) {
+    showOutputPanel("Error: plugin PawnCompiler tidak ditemukan. Pastikan app dijalankan sebagai APK (bukan browser biasa).");
+    return;
+  }
+
+  PawnCompiler.compile({ source: code })
+    .then((result) => {
+      let output = "";
+      if (result.stdout) output += result.stdout;
+      if (result.stderr) output += "\\n" + result.stderr;
+      if (result.success) {
+        output += `\\n\\n✅ Compile berhasil (${result.amxSize} bytes) -> ${result.amxPath}`;
+      } else {
+        output += `\\n\\n❌ Compile gagal (exit code ${result.exitCode})`;
+      }
+      showOutputPanel(output);
+    })
+    .catch((err) => {
+      showOutputPanel("Error menjalankan compiler: " + err.message);
+    });
+}
+
+function showOutputPanel(text) {
+  let panel = document.getElementById("output-panel");
+  if (!panel) {
+    panel = document.createElement("div");
+    panel.id = "output-panel";
+    panel.style.cssText = "position:absolute;bottom:24px;left:0;right:0;max-height:35%;overflow-y:auto;background:#1e1e1e;border-top:1px solid #3c3c3c;color:#d4d4d4;font-family:monospace;font-size:12px;padding:10px;white-space:pre-wrap;z-index:20;";
+    document.getElementById("main-area").appendChild(panel);
+  }
+  panel.textContent = text;
 }
