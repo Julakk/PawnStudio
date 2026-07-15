@@ -81,11 +81,11 @@ function getLanguageForFile(filename) {
 
 // ============ Tab Management ============
 
-function openFile(path) {
+async function openFile(path) {
   let tab = openTabs.find((t) => t.path === path);
 
   if (!tab) {
-    const content = FileManager.readFile(path);
+    const content = await FileManager.readFile(path);
     const filename = path.split("/").pop();
     const model = monaco.editor.createModel(content, getLanguageForFile(filename));
 
@@ -110,7 +110,7 @@ function openFile(path) {
 
   updateBreadcrumb(path);
   renderTabs();
-  renderFileTree();
+  await renderFileTree();
   closeSidebarOnMobile();
 }
 
@@ -174,21 +174,21 @@ function closeTab(path, event) {
   }
 }
 
-function saveActiveTab() {
+async function saveActiveTab() {
   if (!activeTabPath) return;
   const tab = openTabs.find((t) => t.path === activeTabPath);
   if (!tab) return;
 
-  FileManager.writeFile(activeTabPath, tab.model.getValue());
+  await FileManager.writeFile(activeTabPath, tab.model.getValue());
   tab.dirty = false;
   renderTabs();
 }
 
-function saveAllTabs() {
-  openTabs.forEach((tab) => {
-    FileManager.writeFile(tab.path, tab.model.getValue());
+async function saveAllTabs() {
+  for (const tab of openTabs) {
+    await FileManager.writeFile(tab.path, tab.model.getValue());
     tab.dirty = false;
-  });
+  }
   renderTabs();
 }
 
@@ -232,10 +232,10 @@ function renderTabs() {
 
 // ============ Rendering: File Tree ============
 
-function renderFileTree() {
+async function renderFileTree() {
   const container = document.getElementById("file-tree");
   container.innerHTML = "";
-  const tree = FileManager.listTree();
+  const tree = await FileManager.listTree();
   renderNode(tree, container);
 }
 
@@ -333,47 +333,47 @@ function escapeHtml(str) {
 
 // ============ File Actions ============
 
-function handleNewFile() {
+async function handleNewFile() {
   const name = prompt("Nama file baru (contoh: script.pwn):");
   if (!name) return;
   try {
-    const path = FileManager.createFile("", name, "");
-    renderFileTree();
-    openFile(path);
+    const path = await FileManager.createFile("", name, "");
+    await renderFileTree();
+    await openFile(path);
   } catch (err) {
     alert(err.message);
   }
 }
 
-function handleNewFolder() {
+async function handleNewFolder() {
   const name = prompt("Nama folder baru:");
   if (!name) return;
   try {
-    FileManager.createFolder("", name);
-    renderFileTree();
+    await FileManager.createFolder("", name);
+    await renderFileTree();
   } catch (err) {
     alert(err.message);
   }
 }
 
-function handleDeleteEntry(path) {
+async function handleDeleteEntry(path) {
   const ok = confirm(`Hapus "${path}"? Tindakan ini tidak bisa dibatalkan.`);
   if (!ok) return;
 
-  FileManager.deleteEntry(path);
+  await FileManager.deleteEntry(path);
 
   const tab = openTabs.find((t) => t.path === path);
   if (tab) closeTab(path);
 
-  renderFileTree();
+  await renderFileTree();
 }
 
-function handleRenameEntry(path, currentName) {
+async function handleRenameEntry(path, currentName) {
   const newName = prompt("Nama baru:", currentName);
   if (!newName || newName === currentName) return;
 
   try {
-    const newPath = FileManager.renameEntry(path, newName);
+    const newPath = await FileManager.renameEntry(path, newName);
 
     // Kalau file yang di-rename lagi kebuka di tab, update referensinya juga
     const tab = openTabs.find((t) => t.path === path);
@@ -382,7 +382,7 @@ function handleRenameEntry(path, currentName) {
       if (activeTabPath === path) activeTabPath = newPath;
     }
 
-    renderFileTree();
+    await renderFileTree();
     renderTabs();
     if (activeTabPath === newPath) {
       document.getElementById("status-file").textContent = newPath;
@@ -416,13 +416,13 @@ async function handleUploadFiles(fileList) {
         ? file.webkitRelativePath
         : file.name;
 
-      FileManager.writeFileAtPath(relativePath, content);
+      await FileManager.writeFileAtPath(relativePath, content);
     } catch (err) {
       console.error("Gagal upload " + file.name, err);
     }
   }
 
-  renderFileTree();
+  await renderFileTree();
   alert(`${files.length} file berhasil diupload.`);
 }
 
@@ -453,11 +453,11 @@ function bindUploadActions() {
         const entry = zip.files[relPath];
         if (entry.dir) continue;
         const content = await entry.async("string");
-        FileManager.writeFileAtPath(relPath, content);
+        await FileManager.writeFileAtPath(relPath, content);
         count++;
       }
 
-      renderFileTree();
+      await renderFileTree();
       alert(`${count} file dari folder .zip berhasil diupload.`);
     } catch (err) {
       alert("Gagal extract .zip: " + err.message);
