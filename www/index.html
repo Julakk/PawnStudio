@@ -123,12 +123,13 @@
     </div>
   </div>
 
+  <!-- JSZip HARUS dimuat sebelum AMD loader Monaco, biar tidak "ketelan" sistem module AMD -->
+  <script src="vendor/jszip.min.js"></script>
   <!-- Monaco loader (CDN, AMD) -->
   <script src="vs/loader.js"></script>
   <script src="fileManager.js"></script>
   <script src="pawnLanguage.js"></script>
   <script src="pawnCompletion.js"></script>
-  <script src="vendor/jszip.min.js"></script>
   <script src="main.js"></script>
 </body>
 </html>
