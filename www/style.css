@@ -595,3 +595,95 @@ html, body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ============ Open Editors section ============ */
+#open-editors-header {
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: #a3a3a3;
+}
+
+.open-editor-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px 5px 20px;
+  color: #cccccc;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.open-editor-item:active {
+  background-color: #37373d;
+}
+
+.open-editor-item.active {
+  background-color: #094771;
+  color: #ffffff;
+}
+
+.open-editor-item .oe-icon {
+  flex-shrink: 0;
+  display: flex;
+}
+
+.open-editor-item .oe-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.open-editor-item .oe-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  flex-shrink: 0;
+  display: none;
+}
+
+.open-editor-item.dirty .oe-dot {
+  display: block;
+}
+
+.open-editor-item.dirty .oe-close {
+  display: none;
+}
+
+.open-editor-item .oe-close {
+  flex-shrink: 0;
+  opacity: 0.7;
+  display: flex;
+  padding: 2px;
+}
+
+/* ============ Root project header (collapsible) ============ */
+#explorer-root-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: #cccccc;
+  cursor: pointer;
+  border-top: 1px solid #3c3c3c;
+  margin-top: 4px;
+}
+
+#explorer-root-header svg {
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+#explorer-root-header.collapsed svg {
+  transform: rotate(-90deg);
+}
+
+#file-tree.collapsed {
+  display: none;
+}

@@ -29,19 +29,20 @@ window.MonacoEnvironment = {
   }
 };
 
-require(["vs/editor/editor.main"], function () {
+require(["vs/editor/editor.main"], async function () {
   registerPawnLanguage();
   registerPawnCompletion();
-  FileManager.init();
+  await FileManager.init();
   initEditor();
-  renderFileTree();
+  await renderFileTree();
   bindGlobalActions();
   initSettingsUI();
+  bindRootHeaderToggle();
 
   // Auto-buka file pertama yang ada
-  const tree = FileManager.listTree();
+  const tree = await FileManager.listTree();
   const firstFile = findFirstFile(tree);
-  if (firstFile) openFile(firstFile.path);
+  if (firstFile) await openFile(firstFile.path);
 });
 
 // ============ Editor Init ============
@@ -198,6 +199,9 @@ function renderTabs() {
   const tabbar = document.getElementById("tabbar");
   tabbar.innerHTML = "";
 
+  const openEditorsList = document.getElementById("open-editors-list");
+  if (openEditorsList) openEditorsList.innerHTML = "";
+
   openTabs.forEach((tab) => {
     const el = document.createElement("div");
     const fileName = tab.path.split("/").pop();
@@ -227,6 +231,38 @@ function renderTabs() {
     el.addEventListener("click", () => openFile(tab.path));
 
     tabbar.appendChild(el);
+
+    if (openEditorsList) {
+      const oeEl = document.createElement("div");
+      oeEl.className = "open-editor-item" + (tab.path === activeTabPath ? " active" : "") + (tab.dirty ? " dirty" : "");
+
+      const oeIcon = document.createElement("span");
+      oeIcon.className = "oe-icon";
+      oeIcon.innerHTML = ICON_FILE;
+
+      const oeName = document.createElement("span");
+      oeName.className = "oe-name";
+      oeName.textContent = fileName;
+
+      const oeDot = document.createElement("span");
+      oeDot.className = "oe-dot";
+
+      const oeClose = document.createElement("span");
+      oeClose.className = "oe-close";
+      oeClose.innerHTML = ICON_CLOSE;
+      oeClose.addEventListener("click", (e) => closeTab(tab.path, e));
+
+      oeEl.appendChild(oeIcon);
+      oeEl.appendChild(oeName);
+      oeEl.appendChild(oeDot);
+      oeEl.appendChild(oeClose);
+      oeEl.addEventListener("click", (e) => {
+        if (e.target.closest(".oe-close")) return;
+        openFile(tab.path);
+      });
+
+      openEditorsList.appendChild(oeEl);
+    }
   });
 }
 
@@ -237,6 +273,17 @@ async function renderFileTree() {
   container.innerHTML = "";
   const tree = await FileManager.listTree();
   renderNode(tree, container);
+}
+
+function bindRootHeaderToggle() {
+  const header = document.getElementById("explorer-root-header");
+  const tree = document.getElementById("file-tree");
+  if (!header || !tree) return;
+
+  header.addEventListener("click", () => {
+    header.classList.toggle("collapsed");
+    tree.classList.toggle("collapsed");
+  });
 }
 
 function renderNode(node, container) {
