@@ -167,6 +167,50 @@ const FileManager = (function () {
     return newPath;
   }
 
+  // Pastikan seluruh folder di sepanjang path ada (mkdir -p style).
+  // Contoh: ensureFolderPath("a/b/c") bikin folder a, a/b, a/b/c kalau belum ada.
+  function ensureFolderPath(folderPath) {
+    if (!folderPath) return;
+    const parts = folderPath.split("/");
+    const tree = _loadTree();
+    let currentPath = "";
+    let currentNode = tree;
+
+    parts.forEach((part) => {
+      currentPath = _joinPath(currentPath, part);
+      let child = currentNode.children.find((c) => c.path === currentPath && c.type === "folder");
+      if (!child) {
+        child = { type: "folder", name: part, path: currentPath, children: [] };
+        currentNode.children.push(child);
+      }
+      currentNode = child;
+    });
+
+    _saveTree(tree);
+  }
+
+  // Tulis file di path manapun (termasuk bersarang), otomatis bikin folder
+  // yang belum ada, dan overwrite kalau file sudah ada (dipakai buat upload).
+  function writeFileAtPath(fullPath, content) {
+    const parentPath = fullPath.includes("/") ? fullPath.substring(0, fullPath.lastIndexOf("/")) : "";
+    const name = fullPath.includes("/") ? fullPath.substring(fullPath.lastIndexOf("/") + 1) : fullPath;
+
+    if (parentPath) ensureFolderPath(parentPath);
+
+    const tree = _loadTree();
+    const files = _loadFiles();
+    const parent = parentPath ? _findNode(tree, parentPath) : tree;
+
+    const alreadyExists = files.hasOwnProperty(fullPath);
+    if (!alreadyExists) {
+      parent.children.push({ type: "file", name, path: fullPath });
+      _saveTree(tree);
+    }
+
+    files[fullPath] = content;
+    _saveFiles(files);
+  }
+
   return {
     init,
     listTree,
@@ -176,5 +220,7 @@ const FileManager = (function () {
     writeFile,
     deleteEntry,
     renameEntry,
+    ensureFolderPath,
+    writeFileAtPath,
   };
 })();

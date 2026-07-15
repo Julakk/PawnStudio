@@ -8,6 +8,7 @@ const ICON_FILE = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" s
 const ICON_FOLDER = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
 const ICON_TRASH = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
 const ICON_CLOSE = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+const ICON_RENAME = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>';
 
 const MONACO_CDN = window.location.origin + "/vs";
 
@@ -251,14 +252,32 @@ function renderNode(node, container) {
       if (child.type === "folder") {
         const folderEl = document.createElement("div");
         folderEl.className = "folder-item";
-        folderEl.innerHTML = `<span class="icon">${ICON_FOLDER}</span><span>${escapeHtml(child.name)}</span>`;
+        folderEl.innerHTML = `
+          <span class="icon">${ICON_FOLDER}</span>
+          <span class="entry-name">${escapeHtml(child.name)}</span>
+          <span class="item-actions">
+            <button class="btn-rename">${ICON_RENAME}</button>
+            <button class="btn-delete">${ICON_TRASH}</button>
+          </span>
+        `;
 
         const childrenEl = document.createElement("div");
         childrenEl.className = "folder-children";
         renderNode(child, childrenEl);
 
-        folderEl.addEventListener("click", () => {
+        folderEl.addEventListener("click", (e) => {
+          if (e.target.closest(".item-actions")) return;
           childrenEl.style.display = childrenEl.style.display === "none" ? "block" : "none";
+        });
+
+        folderEl.querySelector(".btn-rename").addEventListener("click", (e) => {
+          e.stopPropagation();
+          handleRenameEntry(child.path, child.name);
+        });
+
+        folderEl.querySelector(".btn-delete").addEventListener("click", (e) => {
+          e.stopPropagation();
+          handleDeleteEntry(child.path);
         });
 
         container.appendChild(folderEl);
@@ -267,14 +286,26 @@ function renderNode(node, container) {
         const fileEl = document.createElement("div");
         fileEl.className = "file-item" + (child.path === activeTabPath ? " active" : "");
         fileEl.setAttribute("data-ext", getFileExt(child.name));
-        fileEl.innerHTML = `<span class="icon">${ICON_FILE}</span><span>${escapeHtml(child.name)}</span><span class="file-delete">${ICON_TRASH}</span>`;
+        fileEl.innerHTML = `
+          <span class="icon">${ICON_FILE}</span>
+          <span class="entry-name">${escapeHtml(child.name)}</span>
+          <span class="item-actions">
+            <button class="btn-rename">${ICON_RENAME}</button>
+            <button class="btn-delete">${ICON_TRASH}</button>
+          </span>
+        `;
 
         fileEl.addEventListener("click", (e) => {
-          if (e.target.classList.contains("file-delete")) return;
+          if (e.target.closest(".item-actions")) return;
           openFile(child.path);
         });
 
-        fileEl.querySelector(".file-delete").addEventListener("click", (e) => {
+        fileEl.querySelector(".btn-rename").addEventListener("click", (e) => {
+          e.stopPropagation();
+          handleRenameEntry(child.path, child.name);
+        });
+
+        fileEl.querySelector(".btn-delete").addEventListener("click", (e) => {
           e.stopPropagation();
           handleDeleteEntry(child.path);
         });
@@ -337,6 +368,84 @@ function handleDeleteEntry(path) {
   renderFileTree();
 }
 
+function handleRenameEntry(path, currentName) {
+  const newName = prompt("Nama baru:", currentName);
+  if (!newName || newName === currentName) return;
+
+  try {
+    const newPath = FileManager.renameEntry(path, newName);
+
+    // Kalau file yang di-rename lagi kebuka di tab, update referensinya juga
+    const tab = openTabs.find((t) => t.path === path);
+    if (tab) {
+      tab.path = newPath;
+      if (activeTabPath === path) activeTabPath = newPath;
+    }
+
+    renderFileTree();
+    renderTabs();
+    if (activeTabPath === newPath) {
+      document.getElementById("status-file").textContent = newPath;
+      updateBreadcrumb(newPath);
+    }
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+// ============ Upload File & Folder ============
+
+function readFileAsText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsText(file);
+  });
+}
+
+async function handleUploadFiles(fileList) {
+  const files = Array.from(fileList);
+  if (files.length === 0) return;
+
+  for (const file of files) {
+    try {
+      const content = await readFileAsText(file);
+      // webkitRelativePath ada isinya kalau upload folder, kosong kalau upload file biasa
+      const relativePath = file.webkitRelativePath && file.webkitRelativePath.length > 0
+        ? file.webkitRelativePath
+        : file.name;
+
+      FileManager.writeFileAtPath(relativePath, content);
+    } catch (err) {
+      console.error("Gagal upload " + file.name, err);
+    }
+  }
+
+  renderFileTree();
+  alert(`${files.length} file berhasil diupload.`);
+}
+
+function bindUploadActions() {
+  document.getElementById("btn-upload-file").addEventListener("click", () => {
+    document.getElementById("input-upload-file").click();
+  });
+
+  document.getElementById("btn-upload-folder").addEventListener("click", () => {
+    document.getElementById("input-upload-folder").click();
+  });
+
+  document.getElementById("input-upload-file").addEventListener("change", (e) => {
+    handleUploadFiles(e.target.files);
+    e.target.value = "";
+  });
+
+  document.getElementById("input-upload-folder").addEventListener("change", (e) => {
+    handleUploadFiles(e.target.files);
+    e.target.value = "";
+  });
+}
+
 // ============ Global UI Actions ============
 
 function bindGlobalActions() {
@@ -348,6 +457,7 @@ function bindGlobalActions() {
 
   document.getElementById("btn-new-file").addEventListener("click", handleNewFile);
   document.getElementById("btn-new-folder").addEventListener("click", handleNewFolder);
+  bindUploadActions();
 
   document.getElementById("btn-toggle-sidebar").addEventListener("click", () => {
     document.getElementById("sidebar").classList.toggle("hidden");
