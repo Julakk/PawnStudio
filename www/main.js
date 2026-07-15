@@ -440,9 +440,28 @@ function bindUploadActions() {
     e.target.value = "";
   });
 
-  document.getElementById("input-upload-folder").addEventListener("change", (e) => {
-    handleUploadFiles(e.target.files);
+  document.getElementById("input-upload-folder").addEventListener("change", async (e) => {
+    const zipFile = e.target.files[0];
     e.target.value = "";
+    if (!zipFile) return;
+
+    try {
+      const zip = await JSZip.loadAsync(zipFile);
+      let count = 0;
+
+      for (const relPath of Object.keys(zip.files)) {
+        const entry = zip.files[relPath];
+        if (entry.dir) continue;
+        const content = await entry.async("string");
+        FileManager.writeFileAtPath(relPath, content);
+        count++;
+      }
+
+      renderFileTree();
+      alert(`${count} file dari folder .zip berhasil diupload.`);
+    } catch (err) {
+      alert("Gagal extract .zip: " + err.message);
+    }
   });
 }
 
