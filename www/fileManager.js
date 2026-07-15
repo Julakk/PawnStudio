@@ -11,7 +11,11 @@
 const PROJECT_ROOT = "PawnStudio";
 
 const FileManager = (function () {
-  const { Filesystem, Directory, Encoding } = window.Capacitor.Plugins;
+  const { Filesystem } = window.Capacitor.Plugins;
+  // Directory & Encoding TIDAK tersedia sebagai object runtime tanpa bundler,
+  // jadi kita hardcode nilai string aslinya sesuai source resmi Capacitor.
+  const Directory = { Documents: "DOCUMENTS" };
+  const Encoding = { UTF8: "utf8" };
 
   async function _ensureRoot() {
     try {
