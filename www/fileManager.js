@@ -94,6 +94,7 @@ const FileManager = (function () {
       data: initialContent,
       directory: Directory.Documents,
       encoding: Encoding.UTF8,
+      recursive: true,
     });
 
     return path;
@@ -124,6 +125,7 @@ const FileManager = (function () {
       data: content,
       directory: Directory.Documents,
       encoding: Encoding.UTF8,
+      recursive: true,
     });
   }
 
@@ -136,6 +138,7 @@ const FileManager = (function () {
       data: content,
       directory: Directory.Documents,
       encoding: Encoding.UTF8,
+      recursive: true,
     });
   }
 
