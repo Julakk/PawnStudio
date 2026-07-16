@@ -473,13 +473,42 @@ async function handleUploadFiles(fileList) {
   alert(`${files.length} file berhasil diupload.`);
 }
 
+async function handlePickFolderNative() {
+  const FolderPicker = window.Capacitor?.Plugins?.FolderPicker;
+  if (!FolderPicker) {
+    alert("Plugin FolderPicker tidak ditemukan. Pastikan app dijalankan sebagai APK (bukan browser biasa).");
+    return;
+  }
+
+  try {
+    const result = await FolderPicker.pickFolder();
+    const files = result.files || [];
+
+    if (files.length === 0) {
+      alert("Folder kosong atau tidak ada file yang bisa dibaca.");
+      return;
+    }
+
+    for (const file of files) {
+      await FileManager.writeFileAtPath(file.path, file.content);
+    }
+
+    await renderFileTree();
+    alert(`${files.length} file dari folder "${result.folderName}" berhasil diupload.`);
+  } catch (err) {
+    // User cancel juga masuk sini (reject), jadi jangan alert kalau memang dibatalkan
+    if (err.message && err.message.includes("dibatalkan")) return;
+    alert("Gagal upload folder: " + err.message);
+  }
+}
+
 function bindUploadActions() {
   document.getElementById("btn-upload-file").addEventListener("click", () => {
     document.getElementById("input-upload-file").click();
   });
 
   document.getElementById("btn-upload-folder").addEventListener("click", () => {
-    document.getElementById("input-upload-folder").click();
+    handlePickFolderNative();
   });
 
   document.getElementById("input-upload-file").addEventListener("change", (e) => {
