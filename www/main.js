@@ -37,7 +37,6 @@ require(["vs/editor/editor.main"], async function () {
   await renderFileTree();
   bindGlobalActions();
   initSettingsUI();
-  bindRootHeaderToggle();
 
   // Auto-buka file pertama yang ada
   const tree = await FileManager.listTree();
@@ -273,17 +272,6 @@ async function renderFileTree() {
   container.innerHTML = "";
   const tree = await FileManager.listTree();
   renderNode(tree, container);
-}
-
-function bindRootHeaderToggle() {
-  const header = document.getElementById("explorer-root-header");
-  const tree = document.getElementById("file-tree");
-  if (!header || !tree) return;
-
-  header.addEventListener("click", () => {
-    header.classList.toggle("collapsed");
-    tree.classList.toggle("collapsed");
-  });
 }
 
 function renderNode(node, container) {
