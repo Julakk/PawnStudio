@@ -37,7 +37,11 @@ const FileManager = (function () {
     // dikonfirmasi bersih, biar gak wipe data user tiap app dibuka.
     const existingTree = await listTree();
     for (const child of existingTree.children) {
-      await deleteEntry(child.path);
+      try {
+        await deleteEntry(child.path);
+      } catch (err) {
+        alert("AUTO-WIPE GAGAL hapus \"" + child.path + "\": " + err.message);
+      }
     }
 
     const tree = await listTree();
@@ -155,12 +159,13 @@ const FileManager = (function () {
     try {
       await Filesystem.deleteFile({ path: `${PROJECT_ROOT}/${path}`, directory: Directory.Documents });
     } catch (e) {
-      // Kalau gagal (karena itu folder, bukan file), coba hapus sebagai folder
+      // Kalau gagal (karena itu folder, bukan file), coba hapus sebagai folder.
+      // TIDAK di-catch diam-diam lagi, biar error kelihatan kalau memang gagal.
       await Filesystem.rmdir({
         path: `${PROJECT_ROOT}/${path}`,
         directory: Directory.Documents,
         recursive: true,
-      }).catch(() => {});
+      });
     }
   }
 
