@@ -31,6 +31,15 @@ const FileManager = (function () {
 
   async function init() {
     await _ensureRoot();
+
+    // AUTO-WIPE SEKALI INI SAJA: hapus semua data lama pas app pertama kali dibuka
+    // dengan versi build ini. TODO: hapus blok ini di commit berikutnya setelah
+    // dikonfirmasi bersih, biar gak wipe data user tiap app dibuka.
+    const existingTree = await listTree();
+    for (const child of existingTree.children) {
+      await deleteEntry(child.path);
+    }
+
     const tree = await listTree();
     if (tree.children.length === 0) {
       await createFile("", "main.pwn", `#include <a_samp>\n\nmain()\n{\n    print("PawnStudio ready.");\n}\n`);

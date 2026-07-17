@@ -439,29 +439,6 @@ function readFileAsText(file) {
   });
 }
 
-async function handleClearAll() {
-  const ok = confirm("Hapus SEMUA file dan folder di project ini? Tindakan ini tidak bisa dibatalkan.");
-  if (!ok) return;
-
-  const tree = await FileManager.listTree();
-  for (const child of tree.children) {
-    await FileManager.deleteEntry(child.path);
-  }
-
-  // Tutup semua tab yang lagi kebuka, soalnya filenya udah gak ada
-  openTabs.forEach((tab) => tab.model.dispose());
-  openTabs = [];
-  activeTabPath = null;
-  monacoEditor.setModel(null);
-  document.getElementById("editor-container").classList.add("empty");
-  document.getElementById("status-file").textContent = "no file open";
-  document.getElementById("status-lang").textContent = "";
-  renderTabs();
-
-  await renderFileTree();
-  alert("Semua file berhasil dihapus.");
-}
-
 async function handleUploadFiles(fileList) {
   const files = Array.from(fileList);
   if (files.length === 0) return;
@@ -567,7 +544,6 @@ function bindGlobalActions() {
 
   document.getElementById("btn-new-file").addEventListener("click", handleNewFile);
   document.getElementById("btn-new-folder").addEventListener("click", handleNewFolder);
-  document.getElementById("btn-clear-all").addEventListener("click", handleClearAll);
   bindUploadActions();
 
   document.getElementById("btn-toggle-sidebar").addEventListener("click", () => {
