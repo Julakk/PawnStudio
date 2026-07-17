@@ -44,6 +44,9 @@ const FileManager = (function () {
       }
     }
 
+    const treeAfterWipe = await listTree();
+    alert("AUTO-WIPE selesai. Sisa item di root: " + treeAfterWipe.children.length);
+
     const tree = await listTree();
     if (tree.children.length === 0) {
       await createFile("", "main.pwn", `#include <a_samp>\n\nmain()\n{\n    print("PawnStudio ready.");\n}\n`);
@@ -156,16 +159,21 @@ const FileManager = (function () {
   }
 
   async function deleteEntry(path) {
-    try {
-      await Filesystem.deleteFile({ path: `${PROJECT_ROOT}/${path}`, directory: Directory.Documents });
-    } catch (e) {
-      // Kalau gagal (karena itu folder, bukan file), coba hapus sebagai folder.
-      // TIDAK di-catch diam-diam lagi, biar error kelihatan kalau memang gagal.
+    const fullPath = `${PROJECT_ROOT}/${path}`;
+
+    // Cek tipe entry-nya SECARA EKSPLISIT dulu (file atau folder),
+    // jangan nebak lewat try/catch, karena deleteFile kadang "sukses"
+    // diam-diam walau target sebenarnya folder.
+    const info = await Filesystem.stat({ path: fullPath, directory: Directory.Documents });
+
+    if (info.type === "directory") {
       await Filesystem.rmdir({
-        path: `${PROJECT_ROOT}/${path}`,
+        path: fullPath,
         directory: Directory.Documents,
         recursive: true,
       });
+    } else {
+      await Filesystem.deleteFile({ path: fullPath, directory: Directory.Documents });
     }
   }
 
