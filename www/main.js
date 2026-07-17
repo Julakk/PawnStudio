@@ -474,11 +474,15 @@ async function handleUploadFiles(fileList) {
 }
 
 async function handlePickFolderNative() {
+  alert("DEBUG 1: handlePickFolderNative terpanggil.\nPlugin tersedia: " + Object.keys(window.Capacitor?.Plugins || {}).join(", "));
+
   const FolderPicker = window.Capacitor?.Plugins?.FolderPicker;
   if (!FolderPicker) {
     alert("Plugin FolderPicker tidak ditemukan. Pastikan app dijalankan sebagai APK (bukan browser biasa).");
     return;
   }
+
+  alert("DEBUG 2: FolderPicker ditemukan, memanggil pickFolder()...");
 
   try {
     const result = await FolderPicker.pickFolder();
