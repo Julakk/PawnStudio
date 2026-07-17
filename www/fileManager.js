@@ -32,20 +32,24 @@ const FileManager = (function () {
   async function init() {
     await _ensureRoot();
 
-    // AUTO-WIPE SEKALI INI SAJA: hapus semua data lama pas app pertama kali dibuka
-    // dengan versi build ini. TODO: hapus blok ini di commit berikutnya setelah
-    // dikonfirmasi bersih, biar gak wipe data user tiap app dibuka.
-    const existingTree = await listTree();
-    for (const child of existingTree.children) {
-      try {
-        await deleteEntry(child.path);
-      } catch (err) {
-        alert("AUTO-WIPE GAGAL hapus \"" + child.path + "\": " + err.message);
-      }
+    // AUTO-WIPE SEKALI INI SAJA: hapus SELURUH folder root sekaligus (1 operasi),
+    // bukan satu-satu per child, biar gak ada kegagalan parsial.
+    try {
+      await Filesystem.rmdir({
+        path: PROJECT_ROOT,
+        directory: Directory.Documents,
+        recursive: true,
+      });
+      alert("AUTO-WIPE: folder root berhasil dihapus total.");
+    } catch (err) {
+      alert("AUTO-WIPE GAGAL hapus root: " + err.message);
     }
 
+    // Bikin ulang folder root-nya (kosong)
+    await _ensureRoot();
+
     const treeAfterWipe = await listTree();
-    alert("AUTO-WIPE selesai. Sisa item di root: " + treeAfterWipe.children.length);
+    alert("Cek ulang setelah rebuild root. Sisa item: " + treeAfterWipe.children.length);
 
     const tree = await listTree();
     if (tree.children.length === 0) {
