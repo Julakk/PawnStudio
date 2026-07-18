@@ -6,6 +6,20 @@ Semua perubahan penting pada project PawnStudio dicatat di file ini.
 
 Belum ada perubahan baru yang menunggu rilis.
 
+## [1.2.0] - Native Storage Plugin (Major Stability Fix)
+
+### Fixed
+- **Bug kritis**: file/folder yang dihapus muncul kembali secara misterius, bahkan setelah uninstall total aplikasi. Setelah investigasi panjang (cek race condition, cek Android Auto Backup, cek Google/Samsung Cloud backup), akar masalah dilacak ke plugin resmi `@capacitor/filesystem` yang tidak konsisten pada operasi delete+recreate+list secara berurutan di Android.
+
+### Changed
+- **BREAKING:** Seluruh lapisan penyimpanan file dipindah dari `@capacitor/filesystem` ke plugin native custom (`NativeStoragePlugin.java`) yang menggunakan `java.io.File` secara langsung — tanpa lapisan abstraksi tambahan yang berpotensi menyimpan bug
+- `fileManager.js` ditulis ulang total untuk memanggil plugin native ini, dengan signature fungsi yang tetap sama persis (tidak ada perubahan di `main.js`)
+- `android:allowBackup` dinonaktifkan di `AndroidManifest.xml` sebagai langkah pencegahan tambahan
+
+### Added
+- `data_extraction_rules.xml` untuk mengunci aturan no-backup secara eksplisit di Android 12+
+
+
 ## [1.1.0] - VSCode-style Sidebar & Filesystem Fixes
 
 ### Added
