@@ -95,10 +95,9 @@ public class FolderPickerPlugin extends Plugin {
             if (child.isDirectory()) {
                 walkDocumentTree(child, childRelPath, filesArray);
             } else {
-                // Skip file yang bukan source code (binary, zip, .so, gambar, dll)
-                if (!isAllowedFile(child.getName())) {
-                    continue;
-                }
+                // Semua jenis file diizinkan (tanpa filter ekstensi).
+                // CATATAN: file binary tetap dibaca sebagai teks, jadi bisa
+                // corrupt kalau dipakai lagi sebagai file binary asli.
                 // Skip file yang kegedean untuk dibaca sebagai teks
                 if (child.length() > MAX_FILE_SIZE) {
                     continue;
