@@ -8,6 +8,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(PawnCompilerPlugin.class);
         registerPlugin(FolderPickerPlugin.class);
+        registerPlugin(NativeStoragePlugin.class);
         super.onCreate(savedInstanceState);
     }
 }
