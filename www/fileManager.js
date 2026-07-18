@@ -31,31 +31,6 @@ const FileManager = (function () {
 
   async function init() {
     await _ensureRoot();
-
-    // AUTO-WIPE SEKALI INI SAJA: hapus SELURUH folder root sekaligus (1 operasi),
-    // bukan satu-satu per child, biar gak ada kegagalan parsial.
-    try {
-      await Filesystem.rmdir({
-        path: PROJECT_ROOT,
-        directory: Directory.Documents,
-        recursive: true,
-      });
-      alert("AUTO-WIPE: folder root berhasil dihapus total.");
-    } catch (err) {
-      alert("AUTO-WIPE GAGAL hapus root: " + err.message);
-    }
-
-    // Kasih jeda, buat tes teori race condition (operasi native belum ke-flush)
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    // Bikin ulang folder root-nya (kosong)
-    await _ensureRoot();
-
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    const treeAfterWipe = await listTree();
-    alert("Cek ulang SETELAH JEDA 1.5 detik x2. Sisa item: " + treeAfterWipe.children.length + "\nNama item: " + treeAfterWipe.children.map(c => c.name).join(", "));
-
     const tree = await listTree();
     if (tree.children.length === 0) {
       await createFile("", "main.pwn", `#include <a_samp>\n\nmain()\n{\n    print("PawnStudio ready.");\n}\n`);
