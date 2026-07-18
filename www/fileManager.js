@@ -45,11 +45,16 @@ const FileManager = (function () {
       alert("AUTO-WIPE GAGAL hapus root: " + err.message);
     }
 
+    // Kasih jeda, buat tes teori race condition (operasi native belum ke-flush)
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
     // Bikin ulang folder root-nya (kosong)
     await _ensureRoot();
 
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
     const treeAfterWipe = await listTree();
-    alert("Cek ulang setelah rebuild root. Sisa item: " + treeAfterWipe.children.length);
+    alert("Cek ulang SETELAH JEDA 1.5 detik x2. Sisa item: " + treeAfterWipe.children.length + "\nNama item: " + treeAfterWipe.children.map(c => c.name).join(", "));
 
     const tree = await listTree();
     if (tree.children.length === 0) {
