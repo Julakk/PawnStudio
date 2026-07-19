@@ -79,8 +79,8 @@ public class FolderPickerPlugin extends Plugin {
                 // call.resolve() aman dipanggil dari background thread di Capacitor,
                 // tapi kalau ingin lebih aman bisa dibungkus getActivity().runOnUiThread(...)
                 call.resolve(ret);
-            } catch (Exception e) {
-                call.reject("Gagal membaca folder: " + e.getMessage());
+            } catch (Throwable e) {
+                call.reject("Gagal membaca folder: " + e.getClass().getSimpleName() + " - " + e.getMessage());
             }
         });
     }
@@ -103,6 +103,9 @@ public class FolderPickerPlugin extends Plugin {
                     continue;
                 }
 
+                if (isLikelyBinary(child.getUri())) {
+                    continue;
+                }
                 String content = readDocumentFileAsString(child.getUri());
                 JSObject fileObj = new JSObject();
                 fileObj.put("path", childRelPath);
@@ -118,6 +121,24 @@ public class FolderPickerPlugin extends Plugin {
             if (lower.endsWith(ext)) return true;
         }
         return false;
+    }
+
+    // Deteksi sederhana file binary: cek null byte di 512 byte pertama.
+    // Kalau ketemu, file itu bukan teks murni, skip biar aman (gak baca
+    // sebagai teks yang bisa bikin memory bengkak / corrupt).
+    private boolean isLikelyBinary(Uri uri) {
+        try (java.io.InputStream is = getContext().getContentResolver().openInputStream(uri)) {
+            byte[] buffer = new byte[512];
+            int read = is.read(buffer);
+            for (int i = 0; i < read; i++) {
+                if (buffer[i] == 0) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (Exception e) {
+            return true; // kalau gagal dibaca sama sekali, aman-nya anggap binary & skip
+        }
     }
 
     private String readDocumentFileAsString(Uri uri) {
