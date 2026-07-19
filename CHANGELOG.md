@@ -6,6 +6,14 @@ Semua perubahan penting pada project PawnStudio dicatat di file ini.
 
 Belum ada perubahan baru yang menunggu rilis.
 
+## [1.3.0] - Welcome Screen & Problems Indicator
+
+### Added
+- Welcome Screen yang muncul saat tidak ada file terbuka: tombol File Baru/Folder Baru, dan daftar Recent Files (5 terakhir)
+- Badge jumlah error/warning di status bar, update otomatis setiap kali compile
+- Filter ekstensi file di FolderPicker dihapus — sekarang semua jenis file bisa diupload lewat folder picker native (dengan catatan file binary dibaca sebagai teks)
+
+
 ## [1.2.0] - Native Storage Plugin (Major Stability Fix)
 
 ### Fixed
