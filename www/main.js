@@ -546,16 +546,29 @@ async function handlePickFolderNative() {
     const result = await FolderPicker.pickFolder();
     const files = result.files || [];
 
+    alert("DEBUG 3: pickFolder() selesai.\nJumlah file: " + files.length + "\nDaftar path:\n" + files.map(f => f.path).join("\n"));
+
     if (files.length === 0) {
       alert("Folder kosong atau tidak ada file yang bisa dibaca.");
       return;
     }
 
+    let writeCount = 0;
     for (const file of files) {
-      await FileManager.writeFileAtPath(file.path, file.content);
+      try {
+        await FileManager.writeFileAtPath(file.path, file.content);
+        writeCount++;
+      } catch (writeErr) {
+        alert("DEBUG GAGAL nulis file \"" + file.path + "\": " + writeErr.message);
+        throw writeErr;
+      }
     }
 
+    alert("DEBUG 4: semua " + writeCount + " file berhasil ditulis. Lanjut render tree...");
+
     await renderFileTree();
+
+    alert("DEBUG 5: renderFileTree selesai.");
     alert(`${files.length} file dari folder "${result.folderName}" berhasil diupload.`);
   } catch (err) {
     // User cancel juga masuk sini (reject), jadi jangan alert kalau memang dibatalkan
