@@ -112,6 +112,75 @@ async function openFile(path) {
   renderTabs();
   await renderFileTree();
   closeSidebarOnMobile();
+  addToRecentFiles(path);
+  updateWelcomeVisibility();
+}
+
+// ============ Welcome Screen & Recent Files ============
+
+const RECENT_KEY = "pawnstudio_recent";
+
+function addToRecentFiles(path) {
+  let recent = [];
+  try {
+    recent = JSON.parse(localStorage.getItem(RECENT_KEY)) || [];
+  } catch {
+    recent = [];
+  }
+  recent = recent.filter((p) => p !== path);
+  recent.unshift(path);
+  recent = recent.slice(0, 5);
+  localStorage.setItem(RECENT_KEY, JSON.stringify(recent));
+}
+
+function updateWelcomeVisibility() {
+  const welcome = document.getElementById("welcome-screen");
+  if (!welcome) return;
+
+  if (openTabs.length === 0) {
+    renderWelcomeScreen();
+    welcome.classList.remove("hidden");
+  } else {
+    welcome.classList.add("hidden");
+  }
+}
+
+function renderWelcomeScreen() {
+  let recent = [];
+  try {
+    recent = JSON.parse(localStorage.getItem(RECENT_KEY)) || [];
+  } catch {
+    recent = [];
+  }
+
+  const recentSection = document.getElementById("welcome-recent");
+  const recentList = document.getElementById("welcome-recent-list");
+  if (!recentSection || !recentList) return;
+
+  recentList.innerHTML = "";
+
+  if (recent.length === 0) {
+    recentSection.classList.add("hidden");
+    return;
+  }
+
+  recentSection.classList.remove("hidden");
+
+  recent.forEach((path) => {
+    const item = document.createElement("div");
+    item.className = "welcome-recent-item";
+    item.innerHTML = `<span class="icon">${ICON_FILE}</span><span class="name">${path}</span>`;
+    item.addEventListener("click", () => openFile(path));
+    recentList.appendChild(item);
+  });
+}
+
+function bindWelcomeActions() {
+  const newFileBtn = document.getElementById("welcome-new-file");
+  const newFolderBtn = document.getElementById("welcome-new-folder");
+
+  if (newFileBtn) newFileBtn.addEventListener("click", handleNewFile);
+  if (newFolderBtn) newFolderBtn.addEventListener("click", handleNewFolder);
 }
 
 function updateBreadcrumb(path) {
@@ -168,6 +237,7 @@ function closeTab(path, event) {
       document.getElementById("status-file").textContent = "no file open";
       document.getElementById("status-lang").textContent = "";
       renderTabs();
+      updateWelcomeVisibility();
     }
   } else {
     renderTabs();
@@ -545,6 +615,7 @@ function bindGlobalActions() {
   document.getElementById("btn-new-file").addEventListener("click", handleNewFile);
   document.getElementById("btn-new-folder").addEventListener("click", handleNewFolder);
   bindUploadActions();
+  bindWelcomeActions();
 
   document.getElementById("btn-toggle-sidebar").addEventListener("click", () => {
     document.getElementById("sidebar").classList.toggle("hidden");
@@ -626,10 +697,43 @@ function runCompiler() {
       }
 
       setOutputLines(lines);
+      updateProblemsStatusBar(lines);
     })
     .catch((err) => {
       setOutputLines([{ text: "Error menjalankan compiler: " + err.message, type: "error" }]);
+      updateProblemsStatusBar([]);
     });
+}
+
+function updateProblemsStatusBar(lines) {
+  const badge = document.getElementById("status-problems");
+  if (!badge) return;
+
+  const errorCount = lines.filter((l) => l.type === "error" && l.lineNumber).length;
+  const warningCount = lines.filter((l) => l.type === "warning" && l.lineNumber).length;
+
+  if (errorCount === 0 && warningCount === 0) {
+    badge.classList.add("hidden");
+    badge.innerHTML = "";
+    return;
+  }
+
+  badge.classList.remove("hidden");
+  badge.innerHTML = "";
+
+  if (errorCount > 0) {
+    const errSpan = document.createElement("span");
+    errSpan.className = "count-error";
+    errSpan.textContent = "\u26D4 " + errorCount;
+    badge.appendChild(errSpan);
+  }
+
+  if (warningCount > 0) {
+    const warnSpan = document.createElement("span");
+    warnSpan.className = "count-warning";
+    warnSpan.textContent = "\u26A0 " + warningCount;
+    badge.appendChild(warnSpan);
+  }
 }
 
 function showOutputPanel() {

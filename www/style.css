@@ -687,3 +687,135 @@ html, body {
 #file-tree.collapsed {
   display: none;
 }
+
+/* ============ Status bar: problems count ============ */
+#status-problems {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#status-problems.hidden {
+  display: none;
+}
+
+#status-problems .count-error {
+  color: #ffffff;
+}
+
+#status-problems .count-warning {
+  color: #ffffff;
+  opacity: 0.85;
+}
+
+/* ============ Welcome Screen ============ */
+#welcome-screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #1e1e1e;
+  z-index: 5;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+#welcome-screen.hidden {
+  display: none;
+}
+
+#welcome-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 320px;
+  width: 100%;
+  color: #9b6bd6;
+}
+
+#welcome-inner h1 {
+  color: #d4d4d4;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 12px 0 4px;
+}
+
+.welcome-subtitle {
+  color: #858585;
+  font-size: 13px;
+  margin-bottom: 24px;
+}
+
+#welcome-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.welcome-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: #2d2d2d;
+  border: 1px solid #3c3c3c;
+  color: #d4d4d4;
+  border-radius: 8px;
+  padding: 12px 10px;
+  font-size: 13px;
+}
+
+.welcome-btn:active {
+  background-color: #094771;
+}
+
+#welcome-recent {
+  width: 100%;
+  margin-top: 32px;
+}
+
+#welcome-recent.hidden {
+  display: none;
+}
+
+#welcome-recent-title {
+  color: #858585;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-align: left;
+  margin-bottom: 8px;
+}
+
+.welcome-recent-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  color: #cccccc;
+  font-size: 13px;
+  text-align: left;
+  border-radius: 6px;
+}
+
+.welcome-recent-item:active {
+  background-color: #2d2d2d;
+}
+
+.welcome-recent-item .icon {
+  color: #9b6bd6;
+  flex-shrink: 0;
+  display: flex;
+}
+
+.welcome-recent-item .name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
