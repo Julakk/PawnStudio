@@ -30,6 +30,36 @@ public class PawnCompilerPlugin extends Plugin {
         return dir;
     }
 
+    // Root folder project user (SAMA PERSIS dengan NativeStoragePlugin & FolderPickerPlugin)
+    private File projectRootDir() {
+        File docsDir = getContext().getExternalFilesDir(android.os.Environment.DIRECTORY_DOCUMENTS);
+        return new File(docsDir, "PawnStudio");
+    }
+
+    // Kumpulin semua folder include TAMBAHAN dari dalam project user sendiri
+    // (di luar include bawaan PawnStudio), biar file kayak a_mysql.inc yang
+    // di-upload user sendiri bisa ketemu sama compiler.
+    private java.util.List<File> resolveProjectIncludeDirs(String relativeFilePath) {
+        java.util.List<File> dirs = new java.util.ArrayList<>();
+        File root = projectRootDir();
+
+        // Konvensi umum SA-MP: folder include di root project
+        File conv1 = new File(root, "include");
+        if (conv1.exists() && conv1.isDirectory()) dirs.add(conv1);
+
+        File conv2 = new File(root, "pawno/include");
+        if (conv2.exists() && conv2.isDirectory()) dirs.add(conv2);
+
+        // Folder tempat file yang lagi di-compile itu sendiri berada
+        if (relativeFilePath != null && relativeFilePath.contains("/")) {
+            String parentRel = relativeFilePath.substring(0, relativeFilePath.lastIndexOf("/"));
+            File ownDir = new File(root, parentRel);
+            if (ownDir.exists() && ownDir.isDirectory()) dirs.add(ownDir);
+        }
+
+        return dirs;
+    }
+
     private File compiledOutputDir() {
         // Penyimpanan PERMANEN, gak kena auto-clear sistem seperti cacheDir.
         // Lokasi: Android/data/xyz.ahmadhosting.pawnstudio/files/compiled/
@@ -81,6 +111,7 @@ public class PawnCompilerPlugin extends Plugin {
     public void compile(PluginCall call) {
         String sourceCode = call.getString("source");
         String rawFileName = call.getString("fileName", "main");
+        String relativeFilePath = call.getString("path", "");
 
         if (sourceCode == null) {
             call.reject("Parameter 'source' wajib diisi");
@@ -111,12 +142,17 @@ public class PawnCompilerPlugin extends Plugin {
             // Output .amx WAJIB ke folder permanen
             File outputAmx = new File(compiledOutputDir(), fileName + ".amx");
 
-            ProcessBuilder pb = new ProcessBuilder(
-                    binFile.getAbsolutePath(),
-                    sourceFile.getAbsolutePath(),
-                    "-o" + outputAmx.getAbsolutePath(),
-                    "-i" + includeDir().getAbsolutePath()
-            );
+            java.util.List<String> cmdArgs = new java.util.ArrayList<>();
+            cmdArgs.add(binFile.getAbsolutePath());
+            cmdArgs.add(sourceFile.getAbsolutePath());
+            cmdArgs.add("-o" + outputAmx.getAbsolutePath());
+            cmdArgs.add("-i" + includeDir().getAbsolutePath());
+
+            for (File extraIncludeDir : resolveProjectIncludeDirs(relativeFilePath)) {
+                cmdArgs.add("-i" + extraIncludeDir.getAbsolutePath());
+            }
+
+            ProcessBuilder pb = new ProcessBuilder(cmdArgs);
             pb.environment().put("LD_LIBRARY_PATH", libDir);
             pb.directory(workDir);
 

@@ -670,7 +670,7 @@ function runCompiler() {
     return;
   }
 
-  PawnCompiler.compile({ source: code, fileName: fileName })
+  PawnCompiler.compile({ source: code, fileName: fileName, path: activeTabPath })
     .then((result) => {
       const lines = [];
       const rawOutput = (result.stdout || "") + "\n" + (result.stderr || "");
