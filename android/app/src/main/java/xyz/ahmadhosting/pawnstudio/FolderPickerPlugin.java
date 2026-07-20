@@ -2,8 +2,10 @@ package xyz.ahmadhosting.pawnstudio;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Environment;
+import android.provider.DocumentsContract;
 import androidx.documentfile.provider.DocumentFile;
 
 import com.getcapacitor.JSObject;
@@ -21,18 +23,16 @@ import java.io.InputStreamReader;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-// PENTING: plugin ini SEKARANG NULIS FILE LANGSUNG SATU-SATU ke storage,
-// bukan numpuk semua isi file di memory dulu baru dikirim borongan ke JS.
-// Ini nyegah proses di-kill paksa sama Android gara-gara kehabisan memory
-// pas folder-nya gede (banyak file/subfolder).
+// PENTING: plugin ini nulis file LANGSUNG SATU-SATU ke storage (bukan numpuk
+// di memory), dan pakai ContentResolver.query() + cursor secara langsung
+// buat listing isi folder (BUKAN DocumentFile.listFiles(), yang ternyata
+// kadang ngasih daftar folder yang gak lengkap buat folder besar/banyak isi).
 @CapacitorPlugin(name = "FolderPicker")
 public class FolderPickerPlugin extends Plugin {
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private static final long MAX_FILE_SIZE = 2 * 1024 * 1024;
 
-    // Path root ini HARUS SAMA PERSIS dengan yang dipakai NativeStoragePlugin,
-    // biar file yang ditulis di sini langsung kebaca di Explorer.
     private File getStorageRootDir() {
         File docsDir = getContext().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
         File dir = new File(docsDir, "PawnStudio");
@@ -71,16 +71,19 @@ public class FolderPickerPlugin extends Plugin {
 
         executor.execute(() -> {
             try {
-                DocumentFile root = DocumentFile.fromTreeUri(getContext(), treeUri);
+                String rootDocId = DocumentsContract.getTreeDocumentId(treeUri);
                 File storageRoot = getStorageRootDir();
 
                 int[] counters = { 0, 0 }; // [written, skipped]
-                walkAndWriteDirect(root, "", storageRoot, counters);
+                walkAndWriteDirect(treeUri, rootDocId, "", storageRoot, counters);
+
+                DocumentFile rootDf = DocumentFile.fromTreeUri(getContext(), treeUri);
+                String folderName = (rootDf != null && rootDf.getName() != null) ? rootDf.getName() : "folder";
 
                 JSObject ret = new JSObject();
                 ret.put("count", counters[0]);
                 ret.put("skipped", counters[1]);
-                ret.put("folderName", root != null ? root.getName() : "");
+                ret.put("folderName", folderName);
                 call.resolve(ret);
             } catch (Throwable e) {
                 call.reject("Gagal membaca folder: " + e.getClass().getSimpleName() + " - " + e.getMessage());
@@ -88,53 +91,75 @@ public class FolderPickerPlugin extends Plugin {
         });
     }
 
-    // Jalan-jalan di folder sumber (SAF), dan LANGSUNG nulis tiap file yang
-    // ketemu ke storage tujuan. Gak pernah nyimpen lebih dari 1 file di
-    // memory dalam satu waktu.
-    private void walkAndWriteDirect(DocumentFile sourceDir, String relPath, File destRoot, int[] counters) {
-        if (sourceDir == null || sourceDir.listFiles() == null) return;
+    // Enumerasi isi folder pakai ContentResolver.query() + cursor LANGSUNG,
+    // loop sampai cursor benar-benar habis (moveToNext() sampai false).
+    // Ini lebih reliable dibanding DocumentFile.listFiles() yang ternyata
+    // bisa truncated buat folder dengan banyak isi.
+    private void walkAndWriteDirect(Uri treeUri, String parentDocId, String relPath, File destRoot, int[] counters) {
+        Uri childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, parentDocId);
 
-        for (DocumentFile child : sourceDir.listFiles()) {
-            if (child.getName() == null) continue;
-            String childRelPath = relPath.isEmpty() ? child.getName() : relPath + "/" + child.getName();
+        Cursor cursor = null;
+        try {
+            cursor = getContext().getContentResolver().query(
+                    childrenUri,
+                    new String[] {
+                            DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                            DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                            DocumentsContract.Document.COLUMN_MIME_TYPE,
+                            DocumentsContract.Document.COLUMN_SIZE
+                    },
+                    null, null, null
+            );
 
-            if (child.isDirectory()) {
-                // Bikin folder tujuan EKSPLISIT di sini, walau nanti ternyata
-                // semua isinya di-skip (binary/kegedean). Biar struktur folder
-                // tetap kebentuk utuh, gak cuma nongol kalau ada file di dalamnya.
-                File destSubDir = new File(destRoot, childRelPath);
-                if (!destSubDir.exists()) {
-                    destSubDir.mkdirs();
-                }
-                walkAndWriteDirect(child, childRelPath, destRoot, counters);
-            } else {
-                if (child.length() > MAX_FILE_SIZE) {
-                    counters[1]++;
-                    continue;
-                }
-                // File .pwn dan .inc SELALU dianggap teks source code,
-                // gak usah dicek binary lagi. Ini nyegah false-positive
-                // kalau file di-save dengan encoding UTF-16 (byte null-nya
-                // bisa salah kekira sebagai file binary).
-                String lowerName = child.getName().toLowerCase();
-                boolean isAlwaysTextExt = lowerName.endsWith(".pwn") || lowerName.endsWith(".inc");
-                if (!isAlwaysTextExt && isLikelyBinary(child.getUri())) {
-                    counters[1]++;
-                    continue;
-                }
+            if (cursor == null) return;
 
-                boolean success = copyFileDirect(child.getUri(), destRoot, childRelPath);
-                if (success) {
-                    counters[0]++;
+            while (cursor.moveToNext()) {
+                String docId = cursor.getString(0);
+                String name = cursor.getString(1);
+                String mimeType = cursor.getString(2);
+                long size = cursor.getLong(3);
+
+                if (name == null || docId == null) continue;
+
+                String childRelPath = relPath.isEmpty() ? name : relPath + "/" + name;
+                boolean isDir = DocumentsContract.Document.MIME_TYPE_DIR.equals(mimeType);
+
+                if (isDir) {
+                    File destSubDir = new File(destRoot, childRelPath);
+                    if (!destSubDir.exists()) {
+                        destSubDir.mkdirs();
+                    }
+                    walkAndWriteDirect(treeUri, docId, childRelPath, destRoot, counters);
                 } else {
-                    counters[1]++;
+                    if (size > MAX_FILE_SIZE) {
+                        counters[1]++;
+                        continue;
+                    }
+
+                    Uri childUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, docId);
+
+                    String lowerName = name.toLowerCase();
+                    boolean isAlwaysTextExt = lowerName.endsWith(".pwn") || lowerName.endsWith(".inc");
+                    if (!isAlwaysTextExt && isLikelyBinary(childUri)) {
+                        counters[1]++;
+                        continue;
+                    }
+
+                    boolean success = copyFileDirect(childUri, destRoot, childRelPath);
+                    if (success) {
+                        counters[0]++;
+                    } else {
+                        counters[1]++;
+                    }
                 }
+            }
+        } finally {
+            if (cursor != null) {
+                cursor.close();
             }
         }
     }
 
-    // Baca 1 file dari SAF, langsung tulis ke tujuan, tanpa nyimpen isinya
-    // di variabel String/JSObject apapun.
     private boolean copyFileDirect(Uri sourceUri, File destRoot, String relPath) {
         File destFile = new File(destRoot, relPath);
         File parent = destFile.getParentFile();
