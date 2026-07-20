@@ -105,7 +105,13 @@ public class FolderPickerPlugin extends Plugin {
                     counters[1]++;
                     continue;
                 }
-                if (isLikelyBinary(child.getUri())) {
+                // File .pwn dan .inc SELALU dianggap teks source code,
+                // gak usah dicek binary lagi. Ini nyegah false-positive
+                // kalau file di-save dengan encoding UTF-16 (byte null-nya
+                // bisa salah kekira sebagai file binary).
+                String lowerName = child.getName().toLowerCase();
+                boolean isAlwaysTextExt = lowerName.endsWith(".pwn") || lowerName.endsWith(".inc");
+                if (!isAlwaysTextExt && isLikelyBinary(child.getUri())) {
                     counters[1]++;
                     continue;
                 }
