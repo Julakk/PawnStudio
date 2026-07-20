@@ -99,6 +99,13 @@ public class FolderPickerPlugin extends Plugin {
             String childRelPath = relPath.isEmpty() ? child.getName() : relPath + "/" + child.getName();
 
             if (child.isDirectory()) {
+                // Bikin folder tujuan EKSPLISIT di sini, walau nanti ternyata
+                // semua isinya di-skip (binary/kegedean). Biar struktur folder
+                // tetap kebentuk utuh, gak cuma nongol kalau ada file di dalamnya.
+                File destSubDir = new File(destRoot, childRelPath);
+                if (!destSubDir.exists()) {
+                    destSubDir.mkdirs();
+                }
                 walkAndWriteDirect(child, childRelPath, destRoot, counters);
             } else {
                 if (child.length() > MAX_FILE_SIZE) {
