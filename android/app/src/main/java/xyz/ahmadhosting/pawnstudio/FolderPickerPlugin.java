@@ -3,9 +3,9 @@ package xyz.ahmadhosting.pawnstudio;
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Environment;
 import androidx.documentfile.provider.DocumentFile;
 
-import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -14,27 +14,33 @@ import com.getcapacitor.annotation.ActivityCallback;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+// PENTING: plugin ini SEKARANG NULIS FILE LANGSUNG SATU-SATU ke storage,
+// bukan numpuk semua isi file di memory dulu baru dikirim borongan ke JS.
+// Ini nyegah proses di-kill paksa sama Android gara-gara kehabisan memory
+// pas folder-nya gede (banyak file/subfolder).
 @CapacitorPlugin(name = "FolderPicker")
 public class FolderPickerPlugin extends Plugin {
 
-    // Proses folder di background thread, JANGAN di UI thread
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-
-    // Batas ukuran file yang boleh dibaca sebagai teks (2 MB)
     private static final long MAX_FILE_SIZE = 2 * 1024 * 1024;
 
-    // Hanya ekstensi ini yang dianggap source code / teks
-    // Sesuaikan dengan kebutuhan PawnStudio (tambah/kurangi sesuai jenis file yang perlu dibuka)
-    private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList(
-            ".pwn", ".inc", ".txt", ".json", ".md", ".cfg", ".ini", ".xml"
-    );
+    // Path root ini HARUS SAMA PERSIS dengan yang dipakai NativeStoragePlugin,
+    // biar file yang ditulis di sini langsung kebaca di Explorer.
+    private File getStorageRootDir() {
+        File docsDir = getContext().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
+        File dir = new File(docsDir, "PawnStudio");
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+        return dir;
+    }
 
     @PluginMethod
     public void pickFolder(PluginCall call) {
@@ -53,7 +59,6 @@ public class FolderPickerPlugin extends Plugin {
 
         Uri treeUri = result.getData().getData();
 
-        // Ambil izin akses persist di UI thread dulu (operasi ringan, aman di sini)
         try {
             getContext().getContentResolver().takePersistableUriPermission(
                     treeUri,
@@ -64,20 +69,18 @@ public class FolderPickerPlugin extends Plugin {
             return;
         }
 
-        // Proses berat (walk + baca isi file) dipindah ke background thread
-        // supaya tidak nge-freeze UI saat folder besar / berisi file binary besar
         executor.execute(() -> {
             try {
                 DocumentFile root = DocumentFile.fromTreeUri(getContext(), treeUri);
-                JSArray filesArray = new JSArray();
-                walkDocumentTree(root, "", filesArray);
+                File storageRoot = getStorageRootDir();
+
+                int[] counters = { 0, 0 }; // [written, skipped]
+                walkAndWriteDirect(root, "", storageRoot, counters);
 
                 JSObject ret = new JSObject();
-                ret.put("files", filesArray);
+                ret.put("count", counters[0]);
+                ret.put("skipped", counters[1]);
                 ret.put("folderName", root != null ? root.getName() : "");
-
-                // call.resolve() aman dipanggil dari background thread di Capacitor,
-                // tapi kalau ingin lebih aman bisa dibungkus getActivity().runOnUiThread(...)
                 call.resolve(ret);
             } catch (Throwable e) {
                 call.reject("Gagal membaca folder: " + e.getClass().getSimpleName() + " - " + e.getMessage());
@@ -85,49 +88,64 @@ public class FolderPickerPlugin extends Plugin {
         });
     }
 
-    private void walkDocumentTree(DocumentFile dir, String relPath, JSArray filesArray) {
-        if (dir == null || dir.listFiles() == null) return;
+    // Jalan-jalan di folder sumber (SAF), dan LANGSUNG nulis tiap file yang
+    // ketemu ke storage tujuan. Gak pernah nyimpen lebih dari 1 file di
+    // memory dalam satu waktu.
+    private void walkAndWriteDirect(DocumentFile sourceDir, String relPath, File destRoot, int[] counters) {
+        if (sourceDir == null || sourceDir.listFiles() == null) return;
 
-        for (DocumentFile child : dir.listFiles()) {
+        for (DocumentFile child : sourceDir.listFiles()) {
             if (child.getName() == null) continue;
             String childRelPath = relPath.isEmpty() ? child.getName() : relPath + "/" + child.getName();
 
             if (child.isDirectory()) {
-                walkDocumentTree(child, childRelPath, filesArray);
+                walkAndWriteDirect(child, childRelPath, destRoot, counters);
             } else {
-                // Semua jenis file diizinkan (tanpa filter ekstensi).
-                // CATATAN: file binary tetap dibaca sebagai teks, jadi bisa
-                // corrupt kalau dipakai lagi sebagai file binary asli.
-                // Skip file yang kegedean untuk dibaca sebagai teks
                 if (child.length() > MAX_FILE_SIZE) {
+                    counters[1]++;
+                    continue;
+                }
+                if (isLikelyBinary(child.getUri())) {
+                    counters[1]++;
                     continue;
                 }
 
-                if (isLikelyBinary(child.getUri())) {
-                    continue;
+                boolean success = copyFileDirect(child.getUri(), destRoot, childRelPath);
+                if (success) {
+                    counters[0]++;
+                } else {
+                    counters[1]++;
                 }
-                String content = readDocumentFileAsString(child.getUri());
-                JSObject fileObj = new JSObject();
-                fileObj.put("path", childRelPath);
-                fileObj.put("content", content);
-                filesArray.put(fileObj);
             }
         }
     }
 
-    private boolean isAllowedFile(String name) {
-        String lower = name.toLowerCase();
-        for (String ext : ALLOWED_EXTENSIONS) {
-            if (lower.endsWith(ext)) return true;
+    // Baca 1 file dari SAF, langsung tulis ke tujuan, tanpa nyimpen isinya
+    // di variabel String/JSObject apapun.
+    private boolean copyFileDirect(Uri sourceUri, File destRoot, String relPath) {
+        File destFile = new File(destRoot, relPath);
+        File parent = destFile.getParentFile();
+        if (parent != null && !parent.exists()) {
+            parent.mkdirs();
         }
-        return false;
+
+        try (InputStream is = getContext().getContentResolver().openInputStream(sourceUri);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+             FileWriter writer = new FileWriter(destFile, false)) {
+
+            char[] buffer = new char[4096];
+            int read;
+            while ((read = reader.read(buffer)) != -1) {
+                writer.write(buffer, 0, read);
+            }
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
-    // Deteksi sederhana file binary: cek null byte di 512 byte pertama.
-    // Kalau ketemu, file itu bukan teks murni, skip biar aman (gak baca
-    // sebagai teks yang bisa bikin memory bengkak / corrupt).
     private boolean isLikelyBinary(Uri uri) {
-        try (java.io.InputStream is = getContext().getContentResolver().openInputStream(uri)) {
+        try (InputStream is = getContext().getContentResolver().openInputStream(uri)) {
             byte[] buffer = new byte[512];
             int read = is.read(buffer);
             for (int i = 0; i < read; i++) {
@@ -137,21 +155,7 @@ public class FolderPickerPlugin extends Plugin {
             }
             return false;
         } catch (Exception e) {
-            return true; // kalau gagal dibaca sama sekali, aman-nya anggap binary & skip
-        }
-    }
-
-    private String readDocumentFileAsString(Uri uri) {
-        try (InputStream is = getContext().getContentResolver().openInputStream(uri);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                sb.append(line).append("\n");
-            }
-            return sb.toString();
-        } catch (Exception e) {
-            return "";
+            return true;
         }
     }
 }

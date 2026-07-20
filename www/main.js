@@ -532,48 +532,35 @@ async function handleUploadFiles(fileList) {
 }
 
 async function handlePickFolderNative() {
-  alert("DEBUG 1: handlePickFolderNative terpanggil.\nPlugin tersedia: " + Object.keys(window.Capacitor?.Plugins || {}).join(", "));
-
   const FolderPicker = window.Capacitor?.Plugins?.FolderPicker;
   if (!FolderPicker) {
     alert("Plugin FolderPicker tidak ditemukan. Pastikan app dijalankan sebagai APK (bukan browser biasa).");
     return;
   }
 
-  alert("DEBUG 2: FolderPicker ditemukan, memanggil pickFolder()...");
-
   try {
+    // Sekarang plugin native nulis file LANGSUNG ke storage satu-satu,
+    // JS cuma nerima ringkasan hasil (count, skipped, folderName) -
+    // bukan isi semua file sekaligus, jadi jauh lebih hemat memory.
     const result = await FolderPicker.pickFolder();
-    const files = result.files || [];
-
-    alert("DEBUG 3: pickFolder() selesai.\nJumlah file: " + files.length + "\nDaftar path:\n" + files.map(f => f.path).join("\n"));
-
-    if (files.length === 0) {
-      alert("Folder kosong atau tidak ada file yang bisa dibaca.");
-      return;
-    }
-
-    let writeCount = 0;
-    for (const file of files) {
-      try {
-        await FileManager.writeFileAtPath(file.path, file.content);
-        writeCount++;
-      } catch (writeErr) {
-        alert("DEBUG GAGAL nulis file \"" + file.path + "\": " + writeErr.message);
-        throw writeErr;
-      }
-    }
-
-    alert("DEBUG 4: semua " + writeCount + " file berhasil ditulis. Lanjut render tree...");
 
     await renderFileTree();
+    await renderWelcomeIfNeeded();
 
-    alert("DEBUG 5: renderFileTree selesai.");
-    alert(`${files.length} file dari folder "${result.folderName}" berhasil diupload.`);
+    let msg = `${result.count} file dari folder "${result.folderName}" berhasil diupload.`;
+    if (result.skipped > 0) {
+      msg += `\n(${result.skipped} file dilewati: binary/terlalu besar)`;
+    }
+    alert(msg);
   } catch (err) {
-    // User cancel juga masuk sini (reject), jadi jangan alert kalau memang dibatalkan
     if (err.message && err.message.includes("dibatalkan")) return;
     alert("Gagal upload folder: " + err.message);
+  }
+}
+
+async function renderWelcomeIfNeeded() {
+  if (typeof updateWelcomeVisibility === "function") {
+    updateWelcomeVisibility();
   }
 }
 
