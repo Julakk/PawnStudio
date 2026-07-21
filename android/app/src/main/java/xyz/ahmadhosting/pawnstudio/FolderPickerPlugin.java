@@ -75,14 +75,19 @@ public class FolderPickerPlugin extends Plugin {
                 File storageRoot = getStorageRootDir();
 
                 int[] counters = { 0, 0 }; // [written, skipped]
-                walkAndWriteDirect(treeUri, rootDocId, "", storageRoot, counters);
+                java.util.List<String> skippedNames = new java.util.ArrayList<>();
+                walkAndWriteDirect(treeUri, rootDocId, "", storageRoot, counters, skippedNames);
 
                 DocumentFile rootDf = DocumentFile.fromTreeUri(getContext(), treeUri);
                 String folderName = (rootDf != null && rootDf.getName() != null) ? rootDf.getName() : "folder";
 
+                com.getcapacitor.JSArray skippedArr = new com.getcapacitor.JSArray();
+                for (String s : skippedNames) skippedArr.put(s);
+
                 JSObject ret = new JSObject();
                 ret.put("count", counters[0]);
                 ret.put("skipped", counters[1]);
+                ret.put("skippedNames", skippedArr);
                 ret.put("folderName", folderName);
                 call.resolve(ret);
             } catch (Throwable e) {
@@ -95,7 +100,7 @@ public class FolderPickerPlugin extends Plugin {
     // loop sampai cursor benar-benar habis (moveToNext() sampai false).
     // Ini lebih reliable dibanding DocumentFile.listFiles() yang ternyata
     // bisa truncated buat folder dengan banyak isi.
-    private void walkAndWriteDirect(Uri treeUri, String parentDocId, String relPath, File destRoot, int[] counters) {
+    private void walkAndWriteDirect(Uri treeUri, String parentDocId, String relPath, File destRoot, int[] counters, java.util.List<String> skippedNames) {
         Uri childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, parentDocId);
 
         Cursor cursor = null;
@@ -129,10 +134,11 @@ public class FolderPickerPlugin extends Plugin {
                     if (!destSubDir.exists()) {
                         destSubDir.mkdirs();
                     }
-                    walkAndWriteDirect(treeUri, docId, childRelPath, destRoot, counters);
+                    walkAndWriteDirect(treeUri, docId, childRelPath, destRoot, counters, skippedNames);
                 } else {
                     if (size > MAX_FILE_SIZE) {
                         counters[1]++;
+                        skippedNames.add(childRelPath + " (terlalu besar)");
                         continue;
                     }
 
@@ -142,6 +148,7 @@ public class FolderPickerPlugin extends Plugin {
                     boolean isAlwaysTextExt = lowerName.endsWith(".pwn") || lowerName.endsWith(".inc");
                     if (!isAlwaysTextExt && isLikelyBinary(childUri)) {
                         counters[1]++;
+                        skippedNames.add(childRelPath + " (binary)");
                         continue;
                     }
 
@@ -150,6 +157,7 @@ public class FolderPickerPlugin extends Plugin {
                         counters[0]++;
                     } else {
                         counters[1]++;
+                        skippedNames.add(childRelPath + " (gagal tulis)");
                     }
                 }
             }
@@ -186,12 +194,18 @@ public class FolderPickerPlugin extends Plugin {
         try (InputStream is = getContext().getContentResolver().openInputStream(uri)) {
             byte[] buffer = new byte[512];
             int read = is.read(buffer);
+            if (read <= 0) return false;
+
+            int nullCount = 0;
             for (int i = 0; i < read; i++) {
                 if (buffer[i] == 0) {
-                    return true;
+                    nullCount++;
                 }
             }
-            return false;
+            // Butuh proporsi null byte yang signifikan (>5%) baru dianggap
+            // binary. Ini nyegah false-positive dari 1-2 byte kosong yang
+            // kadang muncul di file teks biasa (encoding quirk, dll).
+            return nullCount > Math.max(2, read / 20);
         } catch (Exception e) {
             return true;
         }

@@ -549,7 +549,12 @@ async function handlePickFolderNative() {
 
     let msg = `${result.count} file dari folder "${result.folderName}" berhasil diupload.`;
     if (result.skipped > 0) {
-      msg += `\n(${result.skipped} file dilewati: binary/terlalu besar)`;
+      msg += `\n\n${result.skipped} file dilewati:\n`;
+      const names = result.skippedNames || [];
+      msg += names.slice(0, 20).join("\n");
+      if (names.length > 20) {
+        msg += `\n...dan ${names.length - 20} lainnya`;
+      }
     }
     alert(msg);
   } catch (err) {
