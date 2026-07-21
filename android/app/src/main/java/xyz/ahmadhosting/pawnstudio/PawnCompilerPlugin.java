@@ -165,6 +165,7 @@ public class PawnCompilerPlugin extends Plugin {
             result.put("exitCode", exitCode);
             result.put("stdout", stdout);
             result.put("stderr", stderr);
+            result.put("debugCmd", String.join(" ", cmdArgs));
             result.put("success", exitCode == 0 && outputAmx.exists());
 
             if (outputAmx.exists()) {

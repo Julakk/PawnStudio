@@ -678,6 +678,9 @@ function runCompiler() {
   PawnCompiler.compile({ source: code, fileName: fileName, path: activeTabPath })
     .then((result) => {
       const lines = [];
+      if (result.debugCmd) {
+        lines.push({ text: "CMD: " + result.debugCmd, type: "info" });
+      }
       const rawOutput = (result.stdout || "") + "\n" + (result.stderr || "");
 
       rawOutput.split("\n").forEach((line) => {
