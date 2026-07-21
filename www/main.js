@@ -575,7 +575,7 @@ function bindUploadActions() {
   });
 
   document.getElementById("btn-upload-folder").addEventListener("click", () => {
-    handlePickFolderNative();
+    document.getElementById("input-upload-folder").click();
   });
 
   document.getElementById("input-upload-file").addEventListener("change", (e) => {
