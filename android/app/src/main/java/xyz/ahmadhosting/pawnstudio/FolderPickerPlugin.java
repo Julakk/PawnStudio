@@ -15,23 +15,22 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.ActivityCallback;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-// PENTING: plugin ini nulis file LANGSUNG SATU-SATU ke storage (bukan numpuk
-// di memory), dan pakai ContentResolver.query() + cursor secara langsung
-// buat listing isi folder (BUKAN DocumentFile.listFiles(), yang ternyata
-// kadang ngasih daftar folder yang gak lengkap buat folder besar/banyak isi).
+// FIX: copy sekarang byte-per-byte (InputStream -> FileOutputStream), bukan
+// BufferedReader/FileWriter mode teks. Ini menghilangkan kebutuhan nebak
+// binary/teks sepenuhnya, jadi semua jenis file (source, gambar, font, dll)
+// ke-copy dengan benar tanpa risiko corrupt atau ke-skip salah deteksi.
 @CapacitorPlugin(name = "FolderPicker")
 public class FolderPickerPlugin extends Plugin {
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private static final long MAX_FILE_SIZE = 2 * 1024 * 1024;
+    // FIX: dinaikin dari 2MB -> 50MB supaya asset project gak keskip diam-diam.
+    private static final long MAX_FILE_SIZE = 50L * 1024 * 1024;
 
     private File getStorageRootDir() {
         File docsDir = getContext().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
@@ -96,10 +95,6 @@ public class FolderPickerPlugin extends Plugin {
         });
     }
 
-    // Enumerasi isi folder pakai ContentResolver.query() + cursor LANGSUNG,
-    // loop sampai cursor benar-benar habis (moveToNext() sampai false).
-    // Ini lebih reliable dibanding DocumentFile.listFiles() yang ternyata
-    // bisa truncated buat folder dengan banyak isi.
     private void walkAndWriteDirect(Uri treeUri, String parentDocId, String relPath, File destRoot, int[] counters, java.util.List<String> skippedNames) {
         Uri childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, parentDocId);
 
@@ -144,15 +139,7 @@ public class FolderPickerPlugin extends Plugin {
 
                     Uri childUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, docId);
 
-                    String lowerName = name.toLowerCase();
-                    boolean isAlwaysTextExt = lowerName.endsWith(".pwn") || lowerName.endsWith(".inc");
-                    if (!isAlwaysTextExt && isLikelyBinary(childUri)) {
-                        counters[1]++;
-                        skippedNames.add(childRelPath + " (binary)");
-                        continue;
-                    }
-
-                    boolean success = copyFileDirect(childUri, destRoot, childRelPath);
+                    boolean success = copyFileBytes(childUri, destRoot, childRelPath);
                     if (success) {
                         counters[0]++;
                     } else {
@@ -168,7 +155,9 @@ public class FolderPickerPlugin extends Plugin {
         }
     }
 
-    private boolean copyFileDirect(Uri sourceUri, File destRoot, String relPath) {
+    // FIX: copy mentah byte-per-byte, aman buat teks maupun binary, tanpa
+    // perlu deteksi jenis file sama sekali.
+    private boolean copyFileBytes(Uri sourceUri, File destRoot, String relPath) {
         File destFile = new File(destRoot, relPath);
         File parent = destFile.getParentFile();
         if (parent != null && !parent.exists()) {
@@ -176,38 +165,18 @@ public class FolderPickerPlugin extends Plugin {
         }
 
         try (InputStream is = getContext().getContentResolver().openInputStream(sourceUri);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-             FileWriter writer = new FileWriter(destFile, false)) {
+             FileOutputStream os = new FileOutputStream(destFile, false)) {
 
-            char[] buffer = new char[4096];
+            if (is == null) return false;
+
+            byte[] buffer = new byte[8192];
             int read;
-            while ((read = reader.read(buffer)) != -1) {
-                writer.write(buffer, 0, read);
+            while ((read = is.read(buffer)) != -1) {
+                os.write(buffer, 0, read);
             }
             return true;
         } catch (Exception e) {
             return false;
-        }
-    }
-
-    private boolean isLikelyBinary(Uri uri) {
-        try (InputStream is = getContext().getContentResolver().openInputStream(uri)) {
-            byte[] buffer = new byte[512];
-            int read = is.read(buffer);
-            if (read <= 0) return false;
-
-            int nullCount = 0;
-            for (int i = 0; i < read; i++) {
-                if (buffer[i] == 0) {
-                    nullCount++;
-                }
-            }
-            // Butuh proporsi null byte yang signifikan (>5%) baru dianggap
-            // binary. Ini nyegah false-positive dari 1-2 byte kosong yang
-            // kadang muncul di file teks biasa (encoding quirk, dll).
-            return nullCount > Math.max(2, read / 20);
-        } catch (Exception e) {
-            return true;
         }
     }
 }

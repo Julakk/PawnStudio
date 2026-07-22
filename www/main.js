@@ -588,22 +588,50 @@ function bindUploadActions() {
     e.target.value = "";
     if (!zipFile) return;
 
+    const logLines = [];
+    async function flushLog() {
+      try { await FileManager.writeFileAtPath("_upload_log.txt", logLines.join("\n")); } catch (e) {}
+    }
+    logLines.push("=== Mulai extract: " + zipFile.name + " ===");
+    await flushLog();
+
     try {
       const zip = await JSZip.loadAsync(zipFile);
-      let count = 0;
+      const allPaths = Object.keys(zip.files);
+      logLines.push("Total entry di zip: " + allPaths.length);
+      await flushLog();
 
-      for (const relPath of Object.keys(zip.files)) {
+      let count = 0;
+      let failCount = 0;
+
+      for (const relPath of allPaths) {
         const entry = zip.files[relPath];
-        if (entry.dir) continue;
-        const content = await entry.async("string");
-        await FileManager.writeFileAtPath(relPath, content);
-        count++;
+        if (entry.dir) {
+          logLines.push("SKIP (folder): " + relPath);
+          await flushLog();
+          continue;
+        }
+        try {
+          const content = await entry.async("string");
+          await FileManager.writeFileAtPath(relPath, content);
+          count++;
+          logLines.push("OK: " + relPath);
+        } catch (fileErr) {
+          failCount++;
+          logLines.push("GAGAL: " + relPath + " -> " + fileErr.message);
+        }
+        await flushLog();
       }
 
+      logLines.push("=== SELESAI. Berhasil: " + count + ", Gagal: " + failCount + " ===");
+      await flushLog();
+
       await renderFileTree();
-      alert(`${count} file dari folder .zip berhasil diupload.`);
+      alert(`${count} file berhasil diupload, ${failCount} gagal.\nCek file "_upload_log.txt" buat detail.`);
     } catch (err) {
-      alert("Gagal extract .zip: " + err.message);
+      logLines.push("=== CRASH TOTAL: " + err.message + " ===");
+      await flushLog();
+      alert("Gagal extract .zip: " + err.message + "\nCek file \"_upload_log.txt\" buat detail.");
     }
   });
 }
