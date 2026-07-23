@@ -649,6 +649,7 @@ function bindGlobalActions() {
   document.getElementById("btn-new-folder").addEventListener("click", handleNewFolder);
   bindUploadActions();
   bindWelcomeActions();
+  bindBulkImportAction();
 
   document.getElementById("btn-toggle-sidebar").addEventListener("click", () => {
     document.getElementById("sidebar").classList.toggle("hidden");
@@ -902,4 +903,51 @@ function initSettingsUI() {
   document.getElementById("setting-font-size").addEventListener("change", updateAndSave);
   document.getElementById("setting-theme").addEventListener("change", updateAndSave);
   document.getElementById("setting-wordwrap").addEventListener("change", updateAndSave);
+}
+
+// ============ Bulk Import (All Files Access, java.io.File langsung) ============
+
+function bindBulkImportAction() {
+  const btn = document.getElementById("btn-bulk-import");
+  if (!btn) return;
+  btn.addEventListener("click", handleBulkImport);
+}
+
+async function handleBulkImport() {
+  const BulkImport = window.Capacitor?.Plugins?.BulkImport;
+  if (!BulkImport) {
+    alert("Plugin BulkImport tidak ditemukan. Pastikan app dijalankan sebagai APK.");
+    return;
+  }
+
+  try {
+    const accessCheck = await BulkImport.checkAllFilesAccess();
+
+    if (!accessCheck.granted) {
+      const proceed = confirm(
+        "Fitur ini butuh izin 'All Files Access' (izin akses semua file).\n\n" +
+        "Setelah tap OK, halaman Settings Android akan terbuka. " +
+        "Aktifkan toggle izin buat PawnStudio, lalu kembali ke app ini dan " +
+        "tap tombol Import Folder Besar lagi."
+      );
+      if (!proceed) return;
+
+      await BulkImport.requestAllFilesAccess();
+      return;
+    }
+
+    const result = await BulkImport.pickFolderAndImport();
+
+    await renderFileTree();
+    updateWelcomeVisibility();
+
+    let msg = `${result.count} file dari folder "${result.folderName}" berhasil diimport.`;
+    if (result.skipped > 0) {
+      msg += `\n(${result.skipped} file dilewati karena terlalu besar)`;
+    }
+    alert(msg);
+  } catch (err) {
+    if (err.message && err.message.includes("dibatalkan")) return;
+    alert("Gagal import folder: " + err.message);
+  }
 }
