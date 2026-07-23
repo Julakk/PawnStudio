@@ -6,6 +6,22 @@ Semua perubahan penting pada project PawnStudio dicatat di file ini.
 
 Belum ada perubahan baru yang menunggu rilis.
 
+## [1.4.0] - Bulk Import & Compiler Include Path
+
+### Added
+- Plugin `BulkImport` baru: import folder besar/kompleks pakai izin "All Files Access" (`MANAGE_EXTERNAL_STORAGE`) + `java.io.File` murni, tanpa lewat SAF/DocumentFile yang terbukti tidak reliable untuk folder dengan ribuan entry (misal folder `pawno` penuh)
+- Compiler sekarang otomatis mencari folder `include/` dan `pawno/include/` di dalam project sendiri, selain include bawaan PawnStudio — memperbaiki error "cannot read from file" untuk include pihak ketiga (contoh: `a_mysql.inc`)
+- Log persisten (`_upload_log.txt`) selama proses extract `.zip`, ditulis per-item dan di-flush langsung ke disk — tetap bisa dibaca walau proses crash di tengah jalan
+- Baris `CMD:` di Output Panel menampilkan command compiler lengkap (termasuk semua flag `-i`) untuk memudahkan debug masalah include path
+
+### Fixed
+- `FolderPickerPlugin` sekarang copy file byte-per-byte (bukan mode teks), menghilangkan kebutuhan menebak binary/teks dan risiko file ter-corrupt
+- Proses extract `.zip` tidak lagi berhenti total kalau 1 file gagal ditulis — lanjut ke file berikutnya dan dicatat sebagai gagal di log
+
+### Known Issues
+- Folder dengan ribuan entry kecil (misal folder `pawno` penuh berisi seluruh aplikasi editor Windows) sebaiknya diimport lewat `BulkImport`, bukan upload folder berbasis SAF/zip biasa
+- GitHub Actions storage quota bisa penuh kalau build terlalu sering dalam waktu singkat; penghitungan ulang kuota oleh GitHub butuh 6-12 jam setelah menghapus artifact/release lama
+
 ## [1.3.0] - Welcome Screen & Problems Indicator
 
 ### Added
