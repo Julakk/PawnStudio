@@ -154,7 +154,12 @@ public class BulkImportPlugin extends Plugin {
                 File parent = destFile.getParentFile();
                 if (parent != null && !parent.exists()) parent.mkdirs();
 
-                boolean success = copyFileBytes(child, destFile);
+                String lowerName = child.getName().toLowerCase();
+                boolean isPawnSource = lowerName.endsWith(".pwn") || lowerName.endsWith(".inc");
+
+                boolean success = isPawnSource
+                        ? copyPawnFileNormalized(child, destFile)
+                        : copyFileBytes(child, destFile);
                 if (success) counters[0]++; else counters[1]++;
             }
         }
@@ -162,6 +167,49 @@ public class BulkImportPlugin extends Plugin {
 
     // Copy byte-per-byte, TANPA nebak teks/binary. Semua jenis file
     // (source code, gambar, font, dll) ke-copy dengan benar apa adanya.
+    // Khusus file .pwn/.inc: baca sebagai teks, normalisasi backslash jadi
+    // forward slash di baris #include (kode YSI/library Windows-style pakai
+    // backslash, gak dikenali compiler Linux/Android), baru ditulis.
+    private boolean copyPawnFileNormalized(File src, File dst) {
+        try {
+            java.io.BufferedReader reader = new java.io.BufferedReader(
+                    new java.io.InputStreamReader(new FileInputStream(src), "UTF-8"));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line).append("\n");
+            }
+            reader.close();
+
+            String normalized = normalizeIncludeSeparators(sb.toString());
+
+            java.io.FileOutputStream fos = new java.io.FileOutputStream(dst);
+            fos.write(normalized.getBytes("UTF-8"));
+            fos.close();
+            return true;
+        } catch (Exception e) {
+            return copyFileBytes(src, dst); // fallback: kalau gagal baca teks, copy byte biasa aja
+        }
+    }
+
+    private String normalizeIncludeSeparators(String source) {
+        if (source == null) return source;
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+                "(?m)^(\\s*#include\\s*[<\"])([^>\"]*)([>\"])"
+        );
+        java.util.regex.Matcher matcher = pattern.matcher(source);
+        StringBuilder result = new StringBuilder();
+        while (matcher.find()) {
+            String path = matcher.group(2).replace("\\", "/");
+            String replacement = java.util.regex.Matcher.quoteReplacement(
+                    matcher.group(1) + path + matcher.group(3)
+            );
+            matcher.appendReplacement(result, replacement);
+        }
+        matcher.appendTail(result);
+        return result.toString();
+    }
+
     private boolean copyFileBytes(File src, File dst) {
         try (FileInputStream fis = new FileInputStream(src);
              FileOutputStream fos = new FileOutputStream(dst)) {
