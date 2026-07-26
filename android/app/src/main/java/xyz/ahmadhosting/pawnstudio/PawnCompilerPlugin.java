@@ -100,6 +100,29 @@ public class PawnCompilerPlugin extends Plugin {
         return sb.toString();
     }
 
+    // Kode PAWN yang ditulis buat compiler Windows (kayak library YSI)
+    // sering pakai backslash di #include (contoh: #include <YSI\\y_timers>),
+    // karena Windows native pakai \\ sebagai pemisah folder. Compiler kita
+    // jalan di Linux/Android yang cuma ngerti /, jadi kita ganti \\ jadi /
+    // KHUSUS di baris #include, gak nyentuh bagian kode lain.
+    private String normalizeIncludeSeparators(String source) {
+        if (source == null) return source;
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+                "(?m)^(\\s*#include\\s*[<\"])([^>\"]*)([>\"])"
+        );
+        java.util.regex.Matcher matcher = pattern.matcher(source);
+        StringBuilder result = new StringBuilder();
+        while (matcher.find()) {
+            String path = matcher.group(2).replace("\\", "/");
+            String replacement = java.util.regex.Matcher.quoteReplacement(
+                    matcher.group(1) + path + matcher.group(3)
+            );
+            matcher.appendReplacement(result, replacement);
+        }
+        matcher.appendTail(result);
+        return result.toString();
+    }
+
     private String sanitizeFileName(String name) {
         String base = name.replaceAll("\\.pwn$", "").replaceAll("\\.inc$", "");
         base = base.replaceAll("[^a-zA-Z0-9_\\-]", "_");
@@ -136,7 +159,7 @@ public class PawnCompilerPlugin extends Plugin {
             if (!workDir.exists()) workDir.mkdirs();
             File sourceFile = new File(workDir, fileName + ".pwn");
             FileWriter writer = new FileWriter(sourceFile);
-            writer.write(sourceCode);
+            writer.write(normalizeIncludeSeparators(sourceCode));
             writer.close();
 
             // Output .amx WAJIB ke folder permanen
