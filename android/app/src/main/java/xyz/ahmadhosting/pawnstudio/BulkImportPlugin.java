@@ -154,12 +154,10 @@ public class BulkImportPlugin extends Plugin {
                 File parent = destFile.getParentFile();
                 if (parent != null && !parent.exists()) parent.mkdirs();
 
-                String lowerName = child.getName().toLowerCase();
-                boolean isPawnSource = lowerName.endsWith(".pwn") || lowerName.endsWith(".inc");
-
-                boolean success = isPawnSource
-                        ? copyPawnFileNormalized(child, destFile)
-                        : copyFileBytes(child, destFile);
+                // Semua file di-copy byte-per-byte apa adanya, TANPA normalisasi
+                // teks apapun. Kompatibilitas backslash-include (YSI dkk) sekarang
+                // ditangani compiler sendiri lewat "#pragma compat 1".
+                boolean success = copyFileBytes(child, destFile);
                 if (success) counters[0]++; else counters[1]++;
             }
         }

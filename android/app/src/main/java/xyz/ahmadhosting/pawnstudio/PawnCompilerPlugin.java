@@ -100,46 +100,12 @@ public class PawnCompilerPlugin extends Plugin {
         return sb.toString();
     }
 
-    // Kode PAWN yang ditulis buat compiler Windows (kayak library YSI)
-    // sering pakai backslash di #include (contoh: #include <YSI\\y_timers>),
-    // karena Windows native pakai \\ sebagai pemisah folder. Compiler kita
-    // jalan di Linux/Android yang cuma ngerti /, jadi kita ganti \\ jadi /
-    // KHUSUS di baris #include, gak nyentuh bagian kode lain.
-    private String normalizeIncludeSeparators(String source) {
-        if (source == null) return source;
-        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
-                "(?m)^(\\s*#include\\s*[<\"])([^>\"]*)([>\"])"
-        );
-        java.util.regex.Matcher matcher = pattern.matcher(source);
-        StringBuilder result = new StringBuilder();
-        while (matcher.find()) {
-            String path = matcher.group(2).replace("\\", "/");
-            String replacement = java.util.regex.Matcher.quoteReplacement(
-                    matcher.group(1) + path + matcher.group(3)
-            );
-            matcher.appendReplacement(result, replacement);
-        }
-        matcher.appendTail(result);
-        return result.toString();
-    }
-
     private String sanitizeFileName(String name) {
         String base = name.replaceAll("\\.pwn$", "").replaceAll("\\.inc$", "");
         base = base.replaceAll("[^a-zA-Z0-9_\\-]", "_");
         if (base.isEmpty()) base = "main";
         return base;
     }
-
-    @PluginMethod
-    public void compile(PluginCall call) {
-        String sourceCode = call.getString("source");
-        String rawFileName = call.getString("fileName", "main");
-        String relativeFilePath = call.getString("path", "");
-
-        if (sourceCode == null) {
-            call.reject("Parameter 'source' wajib diisi");
-            return;
-        }
 
         try {
             ensureIncludesExtracted();
@@ -159,7 +125,11 @@ public class PawnCompilerPlugin extends Plugin {
             if (!workDir.exists()) workDir.mkdirs();
             File sourceFile = new File(workDir, fileName + ".pwn");
             FileWriter writer = new FileWriter(sourceFile);
-            writer.write(normalizeIncludeSeparators(sourceCode));
+            // "#pragma compat 1" ngaktifin compatibility mode bawaan compiler:
+            // backslash di #include otomatis dikonversi jadi separator native
+            // buat lookup file, TAPI teks aslinya tetap utuh buat logic
+            // internal library (kayak YSI) yang emang butuh backslash asli.
+            writer.write("#pragma compat 1\n" + sourceCode);
             writer.close();
 
             // Output .amx WAJIB ke folder permanen
