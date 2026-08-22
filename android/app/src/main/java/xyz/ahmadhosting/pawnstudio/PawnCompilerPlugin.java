@@ -107,6 +107,17 @@ public class PawnCompilerPlugin extends Plugin {
         return base;
     }
 
+    @PluginMethod
+    public void compile(PluginCall call) {
+        String sourceCode = call.getString("source");
+        String rawFileName = call.getString("fileName", "main");
+        String relativeFilePath = call.getString("path", "");
+
+        if (sourceCode == null) {
+            call.reject("Parameter 'source' wajib diisi");
+            return;
+        }
+
         try {
             ensureIncludesExtracted();
 
