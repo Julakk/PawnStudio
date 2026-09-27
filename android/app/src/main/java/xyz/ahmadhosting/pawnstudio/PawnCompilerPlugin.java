@@ -144,11 +144,18 @@ public class PawnCompilerPlugin extends Plugin {
             if (!workDir.exists()) workDir.mkdirs();
             File sourceFile = new File(workDir, fileName + ".pwn");
             FileWriter writer = new FileWriter(sourceFile);
-            // "#pragma compat 1" ngaktifin compatibility mode bawaan compiler:
-            // backslash di #include otomatis dikonversi jadi separator native
-            // buat lookup file, TAPI teks aslinya tetap utuh buat logic
-            // internal library (kayak YSI) yang emang butuh backslash asli.
-            writer.write("#pragma compat 1\n" + sourceCode);
+            // CATATAN: SEBELUMNYA di sini nulis "#pragma compat 1" di depan
+            // source code, dengan asumsi itu perlu biar path #include yang
+            // pake backslash (gaya Windows, banyak dipakai library kayak YSI)
+            // bisa ke-resolve di Linux/Android. TERNYATA itu salah - compiler
+            // 3.10.10 yang dipakai di sini (community compiler / pawn-lang)
+            // SUDAH otomatis paham backslash sebagai separator folder, TANPA
+            // perlu compat mode. Sementara compat mode itu sendiri malah
+            // bentrok sama kode assembly level (#emit) di internal YSI
+            // (y_amx_impl.inc dkk), bikin error kayak "undefined symbol
+            // AMX_GetGlobal" / "ceildiv" / "floordiv". Referensi:
+            // https://github.com/pawn-lang/YSI-Includes/issues/305
+            writer.write(sourceCode);
             writer.close();
 
             // Output .amx WAJIB ke folder permanen
