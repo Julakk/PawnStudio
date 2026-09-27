@@ -1,7 +1,5 @@
 package xyz.ahmadhosting.pawnstudio;
 
-import android.os.Environment;
-
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
@@ -21,12 +19,7 @@ import java.io.BufferedReader;
 public class NativeStoragePlugin extends Plugin {
 
     private File getRootDir() {
-        File docsDir = getContext().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
-        File dir = new File(docsDir, "PawnStudio");
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
-        return dir;
+        return WorkspaceManager.getActiveRoot(getContext());
     }
 
     @PluginMethod

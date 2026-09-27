@@ -37,6 +37,7 @@ require(["vs/editor/editor.main"], async function () {
   await renderFileTree();
   bindGlobalActions();
   initSettingsUI();
+  await updateWorkspaceLabel();
 
   // Auto-buka file pertama yang ada
   const tree = await FileManager.listTree();
@@ -574,65 +575,9 @@ function bindUploadActions() {
     document.getElementById("input-upload-file").click();
   });
 
-  document.getElementById("btn-upload-folder").addEventListener("click", () => {
-    document.getElementById("input-upload-folder").click();
-  });
-
   document.getElementById("input-upload-file").addEventListener("change", (e) => {
     handleUploadFiles(e.target.files);
     e.target.value = "";
-  });
-
-  document.getElementById("input-upload-folder").addEventListener("change", async (e) => {
-    const zipFile = e.target.files[0];
-    e.target.value = "";
-    if (!zipFile) return;
-
-    const logLines = [];
-    async function flushLog() {
-      try { await FileManager.writeFileAtPath("_upload_log.txt", logLines.join("\n")); } catch (e) {}
-    }
-    logLines.push("=== Mulai extract: " + zipFile.name + " ===");
-    await flushLog();
-
-    try {
-      const zip = await JSZip.loadAsync(zipFile);
-      const allPaths = Object.keys(zip.files);
-      logLines.push("Total entry di zip: " + allPaths.length);
-      await flushLog();
-
-      let count = 0;
-      let failCount = 0;
-
-      for (const relPath of allPaths) {
-        const entry = zip.files[relPath];
-        if (entry.dir) {
-          logLines.push("SKIP (folder): " + relPath);
-          await flushLog();
-          continue;
-        }
-        try {
-          const content = await entry.async("string");
-          await FileManager.writeFileAtPath(relPath, content);
-          count++;
-          logLines.push("OK: " + relPath);
-        } catch (fileErr) {
-          failCount++;
-          logLines.push("GAGAL: " + relPath + " -> " + fileErr.message);
-        }
-        await flushLog();
-      }
-
-      logLines.push("=== SELESAI. Berhasil: " + count + ", Gagal: " + failCount + " ===");
-      await flushLog();
-
-      await renderFileTree();
-      alert(`${count} file berhasil diupload, ${failCount} gagal.\nCek file "_upload_log.txt" buat detail.`);
-    } catch (err) {
-      logLines.push("=== CRASH TOTAL: " + err.message + " ===");
-      await flushLog();
-      alert("Gagal extract .zip: " + err.message + "\nCek file \"_upload_log.txt\" buat detail.");
-    }
   });
 }
 
@@ -649,7 +594,7 @@ function bindGlobalActions() {
   document.getElementById("btn-new-folder").addEventListener("click", handleNewFolder);
   bindUploadActions();
   bindWelcomeActions();
-  bindBulkImportAction();
+  bindWorkspaceAction();
 
   document.getElementById("btn-toggle-sidebar").addEventListener("click", () => {
     document.getElementById("sidebar").classList.toggle("hidden");
@@ -729,6 +674,7 @@ function runCompiler() {
       if (result.success) {
         lines.push({ text: `✅ Compile berhasil (${result.amxSize} bytes)`, type: "success" });
         lines.push({ text: result.amxPath, type: "info" });
+        renderFileTree();
       } else {
         lines.push({ text: `❌ Compile gagal (exit code ${result.exitCode})`, type: "error" });
       }
@@ -905,15 +851,40 @@ function initSettingsUI() {
   document.getElementById("setting-wordwrap").addEventListener("change", updateAndSave);
 }
 
-// ============ Bulk Import (All Files Access, java.io.File langsung) ============
+// ============ Workspace ("Buka Folder Project", mirip Open Folder VSCode) ============
+// Beda sama "Bulk Import" versi lama: sekarang TIDAK ADA proses copy file
+// sama sekali. Plugin cuma nunjuk WorkspaceManager di sisi native ke folder
+// asli yang dipilih user, jadi app baca/tulis/compile LANGSUNG di situ.
 
-function bindBulkImportAction() {
-  const btn = document.getElementById("btn-bulk-import");
+function bindWorkspaceAction() {
+  const btn = document.getElementById("btn-open-folder");
   if (!btn) return;
-  btn.addEventListener("click", handleBulkImport);
+  btn.addEventListener("click", handleOpenOrCloseWorkspace);
 }
 
-async function handleBulkImport() {
+async function updateWorkspaceLabel() {
+  const BulkImport = window.Capacitor?.Plugins?.BulkImport;
+  const label = document.getElementById("workspace-name");
+  const btn = document.getElementById("btn-open-folder");
+  if (!BulkImport || !label) return;
+
+  try {
+    const info = await BulkImport.getWorkspaceInfo();
+    if (info.isCustom) {
+      label.textContent = "— " + info.name;
+      label.classList.remove("hidden");
+      if (btn) btn.title = `Folder aktif: ${info.name}. Tap buat ganti/tutup folder.`;
+    } else {
+      label.textContent = "";
+      label.classList.add("hidden");
+      if (btn) btn.title = "Buka Folder Project (langsung dari lokasi aslinya, tanpa copy)";
+    }
+  } catch (err) {
+    // Plugin belum ada (mode browser testing) - diemin aja, gak fatal.
+  }
+}
+
+async function handleOpenOrCloseWorkspace() {
   const BulkImport = window.Capacitor?.Plugins?.BulkImport;
   if (!BulkImport) {
     alert("Plugin BulkImport tidak ditemukan. Pastikan app dijalankan sebagai APK.");
@@ -921,14 +892,29 @@ async function handleBulkImport() {
   }
 
   try {
-    const accessCheck = await BulkImport.checkAllFilesAccess();
+    const info = await BulkImport.getWorkspaceInfo();
 
+    // Kalau lagi buka folder custom, tombol yang sama dipakai buat nutup
+    // folder itu (balik ke sandbox bawaan) - mirip "Close Folder" VSCode.
+    if (info.isCustom) {
+      const wantClose = confirm(
+        `Lagi buka folder "${info.name}".\n\nTutup folder ini dan balik ke workspace bawaan PawnStudio?`
+      );
+      if (!wantClose) return;
+
+      await BulkImport.closeWorkspace();
+      await afterWorkspaceChange();
+      return;
+    }
+
+    const accessCheck = await BulkImport.checkAllFilesAccess();
     if (!accessCheck.granted) {
       const proceed = confirm(
-        "Fitur ini butuh izin 'All Files Access' (izin akses semua file).\n\n" +
+        "Fitur ini butuh izin 'All Files Access' (izin akses semua file), soalnya compiler PAWN " +
+        "butuh baca file langsung dari lokasi aslinya, tanpa disalin dulu.\n\n" +
         "Setelah tap OK, halaman Settings Android akan terbuka. " +
         "Aktifkan toggle izin buat PawnStudio, lalu kembali ke app ini dan " +
-        "tap tombol Import Folder Besar lagi."
+        "tap tombol Buka Folder Project lagi."
       );
       if (!proceed) return;
 
@@ -936,18 +922,29 @@ async function handleBulkImport() {
       return;
     }
 
-    const result = await BulkImport.pickFolderAndImport();
-
-    await renderFileTree();
-    updateWelcomeVisibility();
-
-    let msg = `${result.count} file dari folder "${result.folderName}" berhasil diimport.`;
-    if (result.skipped > 0) {
-      msg += `\n(${result.skipped} file dilewati karena terlalu besar)`;
-    }
-    alert(msg);
+    const result = await BulkImport.openWorkspace();
+    await afterWorkspaceChange();
+    alert(`Folder "${result.name}" sekarang jadi project aktif.\nSemua perubahan langsung ke folder aslinya, gak ada file yang disalin.`);
   } catch (err) {
     if (err.message && err.message.includes("dibatalkan")) return;
-    alert("Gagal import folder: " + err.message);
+    alert("Gagal buka folder: " + err.message);
   }
+}
+
+async function afterWorkspaceChange() {
+  // Ganti workspace berarti file yang lagi kebuka di tab bisa aja udah
+  // gak relevan (folder lama), jadi tab lama ditutup semua biar gak
+  // ketuker/nyimpen ke folder yang salah.
+  openTabs = [];
+  activeTabPath = null;
+  renderTabs();
+  document.getElementById("editor-container").innerHTML = "";
+
+  await updateWorkspaceLabel();
+  await renderFileTree();
+  updateWelcomeVisibility();
+
+  const tree = await FileManager.listTree();
+  const firstFile = findFirstFile(tree);
+  if (firstFile) await openFile(firstFile.path);
 }

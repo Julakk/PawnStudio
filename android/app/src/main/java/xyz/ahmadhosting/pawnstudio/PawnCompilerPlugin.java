@@ -30,10 +30,13 @@ public class PawnCompilerPlugin extends Plugin {
         return dir;
     }
 
-    // Root folder project user (SAMA PERSIS dengan NativeStoragePlugin & FolderPickerPlugin)
+    // Root folder project user (SAMA PERSIS dengan NativeStoragePlugin &
+    // FolderPickerPlugin) - dibaca dari WorkspaceManager, jadi compiler
+    // SELALU mengarah ke folder yang lagi dibuka user di Explorer, apapun
+    // itu (sandbox default atau folder asli yang dibuka lewat "Buka Folder
+    // Project").
     private File projectRootDir() {
-        File docsDir = getContext().getExternalFilesDir(android.os.Environment.DIRECTORY_DOCUMENTS);
-        return new File(docsDir, "PawnStudio");
+        return WorkspaceManager.getActiveRoot(getContext());
     }
 
     // Kumpulin semua folder include TAMBAHAN dari dalam project user sendiri
@@ -42,6 +45,10 @@ public class PawnCompilerPlugin extends Plugin {
     private java.util.List<File> resolveProjectIncludeDirs(String relativeFilePath) {
         java.util.List<File> dirs = new java.util.ArrayList<>();
         File root = projectRootDir();
+
+        // Root project sendiri - jaga-jaga kalau user taruh .inc custom
+        // langsung sejajar di root tanpa folder include/ apapun.
+        dirs.add(root);
 
         // Konvensi umum SA-MP: folder include di root project
         File conv1 = new File(root, "include");
@@ -61,9 +68,10 @@ public class PawnCompilerPlugin extends Plugin {
     }
 
     private File compiledOutputDir() {
-        // Penyimpanan PERMANEN, gak kena auto-clear sistem seperti cacheDir.
-        // Lokasi: Android/data/xyz.ahmadhosting.pawnstudio/files/compiled/
-        File dir = new File(getContext().getExternalFilesDir(null), "compiled");
+        // Ditaruh DI DALAM folder project yang lagi aktif (folder "compiled/"),
+        // biar keliatan langsung di Explorer - mirip folder "dist"/"build" di
+        // VSCode - bukan disembunyiin di storage privat app kayak sebelumnya.
+        File dir = new File(projectRootDir(), "compiled");
         if (!dir.exists()) dir.mkdirs();
         return dir;
     }
