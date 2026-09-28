@@ -363,6 +363,65 @@ public class PawnCompilerPlugin extends Plugin {
         return sb.toString();
     }
 
+    // ==================================================
+    // Auto-fix beda huruf besar/kecil (Windows -> Android)
+    // ==================================================
+    // Banyak gamemode ditulis/dikembangin di Windows, yang nggak peduli
+    // huruf besar/kecil nama file/folder. Begitu di-compile di Android
+    // (peka huruf besar/kecil), #include yang nulis "FAMILIES" padahal
+    // foldernya "families" di disk jadi gagal. Daripada user harus benerin
+    // manual satu-satu (bisa puluhan di gamemode besar), app nyari versi
+    // yang cocok (case-insensitive) dan bikin salinan dengan nama PERSIS
+    // seperti yang ditulis di #include, otomatis, lalu coba compile ulang.
+    private File resolveCaseInsensitive(File root, String relPath) {
+        String[] parts = relPath.split("/");
+        File current = root;
+        for (String part : parts) {
+            if (part.isEmpty() || part.equals(".")) continue;
+            if (part.equals("..")) { current = current.getParentFile(); continue; }
+            if (current == null || !current.isDirectory()) return null;
+
+            File exact = new File(current, part);
+            if (exact.exists()) { current = exact; continue; }
+
+            File[] kids = current.listFiles();
+            File match = null;
+            if (kids != null) {
+                for (File k : kids) {
+                    if (k.getName().equalsIgnoreCase(part)) { match = k; break; }
+                }
+            }
+            if (match == null) return null;
+            current = match;
+        }
+        return (current != null && current.exists()) ? current : null;
+    }
+
+    // Coba benerin path yang gagal ke SATU root tertentu. True kalau berhasil
+    // bikin salinan baru (artinya layak dicoba compile ulang).
+    private boolean applyCaseFix(File root, String relPathAsWritten) {
+        if (!root.isDirectory()) return false;
+        File target = new File(root, relPathAsWritten);
+        if (target.exists()) return false; // sudah persis ada, bukan soal case
+
+        File resolved = resolveCaseInsensitive(root, relPathAsWritten);
+        if (resolved == null || !resolved.isFile()) return false;
+
+        try {
+            File parent = target.getParentFile();
+            if (parent != null && !parent.exists()) parent.mkdirs();
+            byte[] data = readAllBytes(resolved);
+            FileOutputStream fos = new FileOutputStream(target);
+            try { fos.write(data); } finally { fos.close(); }
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private static final java.util.regex.Pattern CANNOT_READ_PATTERN =
+            java.util.regex.Pattern.compile("cannot read from file: \"([^\"]+)\"");
+
     private String sanitizeFileName(String name) {
         String base = name.replaceAll("\\.pwn$", "").replaceAll("\\.inc$", "");
         base = base.replaceAll("[^a-zA-Z0-9_\\-]", "_");
@@ -412,26 +471,64 @@ public class PawnCompilerPlugin extends Plugin {
             // Output .amx WAJIB ke folder permanen
             File outputAmx = new File(compiledOutputDir(), fileName + ".amx");
 
+            java.util.List<File> mirrorDirs = buildIncludeMirror(relativeFilePath);
+
+            java.util.List<File> allRoots = new java.util.ArrayList<>();
+            allRoots.addAll(mirrorDirs);
+            allRoots.add(includeDir());
+            allRoots.add(extraIncludeDir());
+
             java.util.List<String> cmdArgs = new java.util.ArrayList<>();
             cmdArgs.add(binFile.getAbsolutePath());
             cmdArgs.add(sourceFile.getAbsolutePath());
             cmdArgs.add("-o" + outputAmx.getAbsolutePath());
             cmdArgs.add("-i" + includeDir().getAbsolutePath());
-
-            for (File extraIncludeDir : buildIncludeMirror(relativeFilePath)) {
+            for (File extraIncludeDir : mirrorDirs) {
                 cmdArgs.add("-i" + extraIncludeDir.getAbsolutePath());
             }
             // Paling akhir: include bawaan cadangan (kalah prioritas sama project)
             cmdArgs.add("-i" + extraIncludeDir().getAbsolutePath());
 
-            ProcessBuilder pb = new ProcessBuilder(cmdArgs);
-            pb.environment().put("LD_LIBRARY_PATH", libDir);
-            pb.directory(workDir);
+            String stdout = "", stderr = "";
+            int exitCode = 1;
+            java.util.List<String> autoFixed = new java.util.ArrayList<>();
+            java.util.Set<String> triedAndFailed = new java.util.HashSet<>();
+            final int MAX_AUTOFIX_ROUNDS = 40;
 
-            Process process = pb.start();
-            String stdout = readStream(process.getInputStream());
-            String stderr = readStream(process.getErrorStream());
-            int exitCode = process.waitFor();
+            for (int round = 0; round <= MAX_AUTOFIX_ROUNDS; round++) {
+                ProcessBuilder pb = new ProcessBuilder(cmdArgs);
+                pb.environment().put("LD_LIBRARY_PATH", libDir);
+                pb.directory(workDir);
+
+                Process process = pb.start();
+                stdout = readStream(process.getInputStream());
+                stderr = readStream(process.getErrorStream());
+                exitCode = process.waitFor();
+
+                if (exitCode == 0 && outputAmx.exists()) break;
+
+                java.util.regex.Matcher cm = CANNOT_READ_PATTERN.matcher(stdout + "\n" + stderr);
+                if (!cm.find()) break; // error compile beneran, bukan soal file hilang
+
+                String missingRaw = cm.group(1);
+                String missing = missingRaw.replace('\\', '/');
+                if (!triedAndFailed.add(missing)) break; // udah dicoba, masih gagal -> stop, cegah loop mandek
+
+                boolean fixedAny = false;
+                for (File root : allRoots) {
+                    if (applyCaseFix(root, missing)) { fixedAny = true; }
+                }
+                // Nama file di #include kadang tanpa ekstensi (compiler nyoba
+                // .inc dulu) - coba juga versi +".inc" kalau versi polos gagal.
+                if (!fixedAny && !missing.toLowerCase().endsWith(".inc")) {
+                    for (File root : allRoots) {
+                        if (applyCaseFix(root, missing + ".inc")) { fixedAny = true; }
+                    }
+                }
+                if (!fixedAny) break; // genuinely hilang, bukan soal case
+
+                autoFixed.add(missingRaw);
+            }
 
             JSObject result = new JSObject();
             result.put("exitCode", exitCode);
@@ -439,6 +536,12 @@ public class PawnCompilerPlugin extends Plugin {
             result.put("stderr", stderr);
             result.put("debugCmd", String.join(" ", cmdArgs));
             result.put("success", exitCode == 0 && outputAmx.exists());
+
+            if (!autoFixed.isEmpty()) {
+                JSArray fixedArr = new JSArray();
+                for (String f : autoFixed) fixedArr.put(f);
+                result.put("autoFixed", fixedArr);
+            }
 
             if (exitCode != 0) {
                 String hint = buildMissingIncludeHint(stdout + "\n" + stderr, sourceCode, relativeFilePath);

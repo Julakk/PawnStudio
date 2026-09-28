@@ -707,6 +707,10 @@ function runCompiler() {
       if (result.debugCmd) {
         lines.push({ text: "CMD: " + result.debugCmd, type: "info" });
       }
+      if (result.autoFixed && result.autoFixed.length > 0) {
+        lines.push({ text: `🔧 Auto-fix beda huruf besar/kecil (${result.autoFixed.length}):`, type: "info" });
+        result.autoFixed.forEach((f) => lines.push({ text: "  - " + f, type: "info" }));
+      }
       const rawOutput = (result.stdout || "") + "\n" + (result.stderr || "");
 
       rawOutput.split("\n").forEach((line) => {
