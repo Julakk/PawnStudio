@@ -220,8 +220,13 @@ public class PawnCompilerPlugin extends Plugin {
                         mirrorDir(c, new File(dst, c.getName()), true);
                     }
                 } else {
-                    String n = c.getName().toLowerCase();
-                    if (n.endsWith(".inc") || n.endsWith(".pwn") || n.endsWith(".p")) {
+                    // SEBELUMNYA cuma nyalin file .inc/.pwn/.p - ternyata
+                    // beberapa library (nex-ac dkk) #include file berekstensi
+                    // lain (.lang, dll). Sekarang semua file disalin (kecuali
+                    // yang gede banget, jaga-jaga folder include kecampur aset
+                    // lain) - proses normalisasi (ISO-8859-1 round-trip) aman
+                    // buat file apapun, nggak cuma teks.
+                    if (c.length() <= 4L * 1024 * 1024) {
                         seen.add(c.getName());
                         mirrorFile(c, new File(dst, c.getName()));
                     }
