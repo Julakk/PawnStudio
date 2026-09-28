@@ -255,7 +255,39 @@ public class PawnCompilerPlugin extends Plugin {
         }
     }
 
-    private String buildMissingIncludeHint(String output) {
+    // Scan SEMUA #include di file yang lagi dicompile, dan list yang belum
+    // ada di folder include manapun. Biar user tau semua library yang kurang
+    // dalam sekali compile, bukan ketemu satu-satu tiap kali gagal.
+    // Catatan: ini scan level atas saja (include di dalam library nggak diikuti),
+    // dan nggak ngerti #if/#endif, jadi hasilnya "kemungkinan".
+    private java.util.List<String> scanMissingIncludes(String source, String relativeFilePath) {
+        java.util.List<String> missing = new java.util.ArrayList<>();
+        java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("^[ \\t]*#[ \\t]*include[ \\t]*[<\"]([^>\"\\r\\n]+)[>\"]", java.util.regex.Pattern.MULTILINE)
+                .matcher(source);
+
+        java.util.List<File> dirs = new java.util.ArrayList<>();
+        dirs.add(includeDir());
+        dirs.addAll(resolveProjectIncludeDirs(relativeFilePath));
+
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        String[] exts = new String[]{"", ".inc", ".p", ".pwn"};
+        while (m.find()) {
+            String name = m.group(1).trim().replace('\\', '/');
+            if (!seen.add(name)) continue;
+            boolean ok = false;
+            for (File d : dirs) {
+                for (String ext : exts) {
+                    if (new File(d, name + ext).isFile()) { ok = true; break; }
+                }
+                if (ok) break;
+            }
+            if (!ok) missing.add(name);
+        }
+        return missing;
+    }
+
+    private String buildMissingIncludeHint(String output, String source, String relativeFilePath) {
         java.util.regex.Matcher m = java.util.regex.Pattern
                 .compile("cannot read from file: \"([^\"]+)\"").matcher(output);
         if (!m.find()) return null;
@@ -281,6 +313,12 @@ public class PawnCompilerPlugin extends Plugin {
             for (int i = 0; i < found.size() && i < 5; i++) sb.append("  ").append(found.get(i)).append("\n");
             sb.append("Cek: beda huruf besar/kecil sama yang ditulis di #include (Android peka huruf besar/kecil),\n");
             sb.append("atau file-nya ada di folder yang bukan pawno/include.");
+        }
+
+        java.util.List<String> allMissing = scanMissingIncludes(source, relativeFilePath);
+        if (allMissing.size() > 1) {
+            sb.append("\n\nSemua include di file ini yang belum ketemu (kemungkinan, cek satu-satu):\n");
+            for (String n : allMissing) sb.append("  - ").append(n).append("\n");
         }
         return sb.toString();
     }
@@ -361,7 +399,7 @@ public class PawnCompilerPlugin extends Plugin {
             result.put("success", exitCode == 0 && outputAmx.exists());
 
             if (exitCode != 0) {
-                String hint = buildMissingIncludeHint(stdout + "\n" + stderr);
+                String hint = buildMissingIncludeHint(stdout + "\n" + stderr, sourceCode, relativeFilePath);
                 if (hint != null) result.put("hint", hint);
             }
 
