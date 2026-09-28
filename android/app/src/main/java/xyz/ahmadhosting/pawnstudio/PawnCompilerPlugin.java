@@ -398,30 +398,78 @@ public class PawnCompilerPlugin extends Plugin {
         return (current != null && current.exists()) ? current : null;
     }
 
-    // Coba benerin path yang gagal ke SATU root tertentu. True kalau berhasil
-    // bikin salinan baru (artinya layak dicoba compile ulang).
-    private boolean applyCaseFix(File root, String relPathAsWritten) {
-        if (!root.isDirectory()) return false;
-        File target = new File(root, relPathAsWritten);
-        if (target.exists()) return false; // sudah persis ada, bukan soal case
-
-        File resolved = resolveCaseInsensitive(root, relPathAsWritten);
-        if (resolved == null || !resolved.isFile()) return false;
-
-        try {
-            File parent = target.getParentFile();
-            if (parent != null && !parent.exists()) parent.mkdirs();
-            byte[] data = readAllBytes(resolved);
-            FileOutputStream fos = new FileOutputStream(target);
+    // Salin SEMUA isi folder (rekursif), bukan cuma 1 file. Penting: kalau
+    // yang mismatch itu sebuah FOLDER (misal "Trans" vs "trans"), begitu folder
+    // versi-fix dibuat, dia jadi exact-match buat pengecekan berikutnya - jadi
+    // file lain di folder asli yang belum kebawa GAK BAKAL ketemu lagi. Makanya
+    // sekali ketemu folder mismatch, borong semua isinya sekali jalan.
+    private void copyTreeAll(File src, File dst) throws Exception {
+        if (src.isDirectory()) {
+            if (!dst.exists()) dst.mkdirs();
+            File[] kids = src.listFiles();
+            if (kids != null) {
+                for (File k : kids) copyTreeAll(k, new File(dst, k.getName()));
+            }
+        } else {
+            if (src.length() > 4L * 1024 * 1024) return; // jaga-jaga file kegedean
+            byte[] data = readAllBytes(src);
+            FileOutputStream fos = new FileOutputStream(dst);
             try { fos.write(data); } finally { fos.close(); }
-            return true;
-        } catch (Exception e) {
-            return false;
         }
     }
 
+    // Jalan dari root, segmen demi segmen. Begitu ketemu 1 segmen yang cuma
+    // cocok case-insensitive (bukan exact), borong seluruh isinya (file
+    // maupun folder) ke lokasi baru dengan huruf PERSIS seperti di #include,
+    // lalu berhenti (gak perlu lanjut ke bawah - semua turunannya udah ikut).
+    private boolean applyCaseFix(File root, String relPathAsWritten) {
+        if (!root.isDirectory()) return false;
+        if (new File(root, relPathAsWritten).exists()) return false; // udah persis ada
+
+        String[] parts = relPathAsWritten.split("/");
+        File currentReal = root;
+        File currentTarget = root;
+
+        for (String part : parts) {
+            if (part.isEmpty() || part.equals(".")) continue;
+            if (part.equals("..")) {
+                if (currentReal.getParentFile() == null) return false;
+                currentReal = currentReal.getParentFile();
+                currentTarget = currentTarget.getParentFile();
+                if (currentTarget == null) return false;
+                continue;
+            }
+
+            File exactReal = new File(currentReal, part);
+            if (exactReal.exists()) {
+                currentReal = exactReal;
+                currentTarget = new File(currentTarget, part);
+                continue;
+            }
+
+            File[] kids = currentReal.listFiles();
+            File match = null;
+            if (kids != null) {
+                for (File k : kids) {
+                    if (k.getName().equalsIgnoreCase(part)) { match = k; break; }
+                }
+            }
+            if (match == null) return false; // beneran gak ada, bukan soal huruf
+
+            try {
+                copyTreeAll(match, new File(currentTarget, part));
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+        return false;
+    }
+
     private static final java.util.regex.Pattern CANNOT_READ_PATTERN =
-            java.util.regex.Pattern.compile("cannot read from file: \"([^\"]+)\"");
+            java.util.regex.Pattern.compile(
+                    "^(.*?)\\((\\d+)\\)\\s*:\\s*fatal error 100: cannot read from file: \"([^\"]+)\"",
+                    java.util.regex.Pattern.MULTILINE);
 
     private String sanitizeFileName(String name) {
         String base = name.replaceAll("\\.pwn$", "").replaceAll("\\.inc$", "");
@@ -511,19 +559,30 @@ public class PawnCompilerPlugin extends Plugin {
                 java.util.regex.Matcher cm = CANNOT_READ_PATTERN.matcher(stdout + "\n" + stderr);
                 if (!cm.find()) break; // error compile beneran, bukan soal file hilang
 
-                String missingRaw = cm.group(1);
+                String reportingFilePath = cm.group(1).trim();
+                String missingRaw = cm.group(3);
                 String missing = missingRaw.replace('\\', '/');
                 if (!triedAndFailed.add(missing)) break; // udah dicoba, masih gagal -> stop, cegah loop mandek
 
+                // Basis pencarian: folder file yang LAGI DIPROSES compiler saat
+                // itu (penting buat path pake "../../", relatif ke situ, BUKAN
+                // relatif ke root -i) dicoba duluan, baru fallback ke semua root.
+                java.util.List<File> searchBases = new java.util.ArrayList<>();
+                File reportingFile = new File(reportingFilePath);
+                if (reportingFile.isFile() && reportingFile.getParentFile() != null) {
+                    searchBases.add(reportingFile.getParentFile());
+                }
+                searchBases.addAll(allRoots);
+
                 boolean fixedAny = false;
-                for (File root : allRoots) {
-                    if (applyCaseFix(root, missing)) { fixedAny = true; }
+                for (File base : searchBases) {
+                    if (applyCaseFix(base, missing)) { fixedAny = true; break; }
                 }
                 // Nama file di #include kadang tanpa ekstensi (compiler nyoba
                 // .inc dulu) - coba juga versi +".inc" kalau versi polos gagal.
                 if (!fixedAny && !missing.toLowerCase().endsWith(".inc")) {
-                    for (File root : allRoots) {
-                        if (applyCaseFix(root, missing + ".inc")) { fixedAny = true; }
+                    for (File base : searchBases) {
+                        if (applyCaseFix(base, missing + ".inc")) { fixedAny = true; break; }
                     }
                 }
                 if (!fixedAny) break; // genuinely hilang, bukan soal case
