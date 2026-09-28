@@ -235,6 +235,56 @@ public class PawnCompilerPlugin extends Plugin {
         return result;
     }
 
+    // ==================================================
+    // Diagnosa include hilang: kalau compiler bilang 'cannot read from file: "X"',
+    // cari X di SELURUH project (tanpa peduli huruf besar/kecil) dan kasih
+    // tau user file itu ada di mana, atau memang belum ada sama sekali.
+    // ==================================================
+    private void findByName(File dir, java.util.Set<String> wanted, java.util.List<String> out, int depth, int[] budget) {
+        if (depth > 8 || budget[0] <= 0) return;
+        File[] kids = dir.listFiles();
+        if (kids == null) return;
+        for (File k : kids) {
+            if (budget[0]-- <= 0) return;
+            if (k.isDirectory()) {
+                if (k.getName().equals("compiled")) continue;
+                findByName(k, wanted, out, depth + 1, budget);
+            } else if (wanted.contains(k.getName().toLowerCase())) {
+                out.add(k.getAbsolutePath());
+            }
+        }
+    }
+
+    private String buildMissingIncludeHint(String output) {
+        java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("cannot read from file: \"([^\"]+)\"").matcher(output);
+        if (!m.find()) return null;
+
+        String missing = m.group(1).replace('\\', '/');
+        String base = missing.substring(missing.lastIndexOf('/') + 1);
+        java.util.Set<String> wanted = new java.util.HashSet<>();
+        String lower = base.toLowerCase();
+        wanted.add(lower);
+        if (!lower.endsWith(".inc")) wanted.add(lower + ".inc");
+        if (!lower.endsWith(".p")) wanted.add(lower + ".p");
+
+        java.util.List<String> found = new java.util.ArrayList<>();
+        findByName(projectRootDir(), wanted, found, 0, new int[]{60000});
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("[Diagnosa] include \"").append(missing).append("\" tidak ketemu.\n");
+        if (found.isEmpty()) {
+            sb.append("File bernama \"").append(base).append("\" (.inc) TIDAK ADA di seluruh folder project.\n");
+            sb.append("Artinya library ini belum ada - taruh file-nya di pawno/include/.");
+        } else {
+            sb.append("File yang namanya mirip ada di:\n");
+            for (int i = 0; i < found.size() && i < 5; i++) sb.append("  ").append(found.get(i)).append("\n");
+            sb.append("Cek: beda huruf besar/kecil sama yang ditulis di #include (Android peka huruf besar/kecil),\n");
+            sb.append("atau file-nya ada di folder yang bukan pawno/include.");
+        }
+        return sb.toString();
+    }
+
     private String sanitizeFileName(String name) {
         String base = name.replaceAll("\\.pwn$", "").replaceAll("\\.inc$", "");
         base = base.replaceAll("[^a-zA-Z0-9_\\-]", "_");
@@ -309,6 +359,11 @@ public class PawnCompilerPlugin extends Plugin {
             result.put("stderr", stderr);
             result.put("debugCmd", String.join(" ", cmdArgs));
             result.put("success", exitCode == 0 && outputAmx.exists());
+
+            if (exitCode != 0) {
+                String hint = buildMissingIncludeHint(stdout + "\n" + stderr);
+                if (hint != null) result.put("hint", hint);
+            }
 
             if (outputAmx.exists()) {
                 result.put("amxPath", outputAmx.getAbsolutePath());

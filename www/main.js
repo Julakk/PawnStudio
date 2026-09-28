@@ -677,6 +677,9 @@ function runCompiler() {
         renderFileTree();
       } else {
         lines.push({ text: `❌ Compile gagal (exit code ${result.exitCode})`, type: "error" });
+        if (result.hint) {
+          result.hint.split("\n").forEach((h) => lines.push({ text: h, type: "info" }));
+        }
       }
 
       setOutputLines(lines);
