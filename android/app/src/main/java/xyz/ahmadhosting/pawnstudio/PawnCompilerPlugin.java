@@ -76,7 +76,41 @@ public class PawnCompilerPlugin extends Plugin {
         return dir;
     }
 
+    // Include bawaan cadangan (memory, sscanf2, streamer, dst). Dipakai HANYA
+    // kalau project user nggak punya versinya sendiri (prioritas -i paling bawah).
+    private File extraIncludeDir() {
+        File dir = new File(getContext().getFilesDir(), "pawno/extra");
+        if (!dir.exists()) dir.mkdirs();
+        return dir;
+    }
+
+    private void ensureExtraIncludesExtracted() throws Exception {
+        String[] assetFiles = getContext().getAssets().list("pawno/extra");
+        if (assetFiles == null) return;
+        File dir = extraIncludeDir();
+
+        for (String name : assetFiles) {
+            if (!name.toLowerCase().endsWith(".inc")) continue;
+            File outFile = new File(dir, name);
+
+            InputStream input = getContext().getAssets().open("pawno/extra/" + name);
+            java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+            byte[] buffer = new byte[4096];
+            int read;
+            while ((read = input.read(buffer)) != -1) bos.write(buffer, 0, read);
+            input.close();
+            byte[] data = bos.toByteArray();
+
+            // Timpa kalau belum ada / ukurannya beda (APK baru bawa versi baru)
+            if (outFile.exists() && outFile.length() == data.length) continue;
+            FileOutputStream output = new FileOutputStream(outFile);
+            output.write(data);
+            output.close();
+        }
+    }
+
     private void ensureIncludesExtracted() throws Exception {
+        ensureExtraIncludesExtracted();
         File dir = includeDir();
         String[] assetFiles = getContext().getAssets().list("pawno/include");
         if (assetFiles == null) return;
@@ -268,6 +302,7 @@ public class PawnCompilerPlugin extends Plugin {
 
         java.util.List<File> dirs = new java.util.ArrayList<>();
         dirs.add(includeDir());
+        dirs.add(extraIncludeDir());
         dirs.addAll(resolveProjectIncludeDirs(relativeFilePath));
 
         java.util.Set<String> seen = new java.util.HashSet<>();
@@ -381,6 +416,8 @@ public class PawnCompilerPlugin extends Plugin {
             for (File extraIncludeDir : buildIncludeMirror(relativeFilePath)) {
                 cmdArgs.add("-i" + extraIncludeDir.getAbsolutePath());
             }
+            // Paling akhir: include bawaan cadangan (kalah prioritas sama project)
+            cmdArgs.add("-i" + extraIncludeDir().getAbsolutePath());
 
             ProcessBuilder pb = new ProcessBuilder(cmdArgs);
             pb.environment().put("LD_LIBRARY_PATH", libDir);
