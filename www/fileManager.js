@@ -20,6 +20,11 @@ const FileManager = (function () {
     return await NativeStorage.listTree();
   }
 
+  // Isi SATU folder (1 level) - dipakai Explorer buat muat subfolder bertahap.
+  async function listDir(path) {
+    return await NativeStorage.listDir({ path });
+  }
+
   function _joinPath(parent, name) {
     return parent ? `${parent}/${name}` : name;
   }
@@ -69,6 +74,7 @@ const FileManager = (function () {
   return {
     init,
     listTree,
+    listDir,
     createFile,
     createFolder,
     readFile,

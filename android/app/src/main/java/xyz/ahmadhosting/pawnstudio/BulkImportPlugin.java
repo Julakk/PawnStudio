@@ -80,7 +80,17 @@ public class BulkImportPlugin extends Plugin {
         ret.put("isCustom", WorkspaceManager.isCustomWorkspace(getContext()));
         ret.put("name", WorkspaceManager.getDisplayName(getContext()));
         ret.put("path", WorkspaceManager.getActiveRoot(getContext()).getAbsolutePath());
+        String recovered = WorkspaceManager.consumeRecoveredFrom(getContext());
+        if (recovered != null) ret.put("recoveredFrom", recovered);
         call.resolve(ret);
+    }
+
+    // Dipanggil JS setelah Explorer berhasil tampil = launch/ganti folder
+    // sukses, jadi pengaman crash loop dimatikan.
+    @PluginMethod
+    public void markLaunchOk(PluginCall call) {
+        WorkspaceManager.markLaunchOk(getContext());
+        call.resolve();
     }
 
     // Balik ke folder sandbox bawaan (mirip "Close Folder" di VSCode).

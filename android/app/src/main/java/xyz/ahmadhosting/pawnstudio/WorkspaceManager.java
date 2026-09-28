@@ -29,6 +29,8 @@ public class WorkspaceManager {
     private static final String PREFS_NAME = "pawnstudio_workspace";
     private static final String KEY_WORKSPACE_PATH = "workspace_path";
     private static final String KEY_WORKSPACE_NAME = "workspace_name";
+    private static final String KEY_LAUNCH_PENDING = "launch_pending";
+    private static final String KEY_RECOVERED_FROM = "recovered_from";
 
     private static SharedPreferences prefs(Context ctx) {
         return ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
@@ -61,10 +63,46 @@ public class WorkspaceManager {
 
     // Dipanggil pas user berhasil pilih folder lewat "Buka Folder Project".
     public static void setActiveRoot(Context ctx, String plainPath, String displayName) {
+        // commit() (sinkron), bukan apply(): flag harus benar-benar tersimpan
+        // SEBELUM app mulai baca folder baru, biar kalau app crash saat itu,
+        // launch berikutnya tahu dan bisa pulih.
         prefs(ctx).edit()
                 .putString(KEY_WORKSPACE_PATH, plainPath)
                 .putString(KEY_WORKSPACE_NAME, displayName)
-                .apply();
+                .putBoolean(KEY_LAUNCH_PENDING, true)
+                .commit();
+    }
+
+    // ---- Pengaman crash loop ----
+    // Kalau membuka sebuah folder project bikin app crash (misal folder
+    // terlalu besar), folder itu tersimpan sebagai project aktif dan app
+    // crash lagi tiap dibuka. Solusinya: flag "launch_pending" dinyalakan
+    // tiap proses baru & saat ganti folder, dan baru dimatikan JS setelah
+    // Explorer berhasil tampil. Kalau saat launch flag masih nyala berarti
+    // launch sebelumnya crash -> project custom dilepas, balik ke bawaan.
+    public static void beginLaunch(Context ctx) {
+        SharedPreferences p = prefs(ctx);
+        boolean previousCrashed = p.getBoolean(KEY_LAUNCH_PENDING, false);
+        SharedPreferences.Editor e = p.edit();
+        if (previousCrashed && p.getString(KEY_WORKSPACE_PATH, null) != null) {
+            String name = p.getString(KEY_WORKSPACE_NAME, null);
+            e.putString(KEY_RECOVERED_FROM, name != null ? name : "folder project");
+            e.remove(KEY_WORKSPACE_PATH).remove(KEY_WORKSPACE_NAME);
+        }
+        e.putBoolean(KEY_LAUNCH_PENDING, true);
+        e.commit();
+    }
+
+    public static void markLaunchOk(Context ctx) {
+        prefs(ctx).edit().putBoolean(KEY_LAUNCH_PENDING, false).commit();
+    }
+
+    // Nama folder yang dilepas gara-gara crash (sekali baca, lalu dihapus).
+    public static String consumeRecoveredFrom(Context ctx) {
+        SharedPreferences p = prefs(ctx);
+        String name = p.getString(KEY_RECOVERED_FROM, null);
+        if (name != null) p.edit().remove(KEY_RECOVERED_FROM).commit();
+        return name;
     }
 
     // Balikin ke folder sandbox bawaan (buat tombol "Tutup Folder Project").

@@ -43,6 +43,9 @@ require(["vs/editor/editor.main"], async function () {
   const tree = await FileManager.listTree();
   const firstFile = findFirstFile(tree);
   if (firstFile) await openFile(firstFile.path);
+
+  // Explorer berhasil tampil tanpa crash -> matikan pengaman crash-loop.
+  try { await window.Capacitor?.Plugins?.BulkImport?.markLaunchOk(); } catch (e) {}
 });
 
 // ============ Editor Init ============
@@ -345,8 +348,19 @@ async function renderFileTree() {
   renderNode(tree, container);
 }
 
+// Path folder yang lagi terbuka di Explorer (buat dipulihkan saat refresh)
+const expandedFolders = new Set();
+
 function renderNode(node, container) {
   if (!node.children) return;
+
+  if (node.truncated) {
+    const note = document.createElement("div");
+    note.className = "file-item";
+    note.style.opacity = "0.6";
+    note.textContent = "… sebagian isi folder tidak ditampilkan (terlalu banyak file)";
+    container.appendChild(note);
+  }
 
   node.children
     .slice()
@@ -369,11 +383,49 @@ function renderNode(node, container) {
 
         const childrenEl = document.createElement("div");
         childrenEl.className = "folder-children";
-        renderNode(child, childrenEl);
 
-        folderEl.addEventListener("click", (e) => {
+        // Isi subfolder dimuat BERTAHAP (saat diketuk), bukan semuanya di
+        // awal - folder server bisa berisi ribuan file dan bikin app crash.
+        let loaded = !child.lazy;
+        if (loaded) {
+          renderNode(child, childrenEl);
+        } else {
+          childrenEl.style.display = "none";
+        }
+
+        const loadChildren = async () => {
+          try {
+            const sub = await FileManager.listDir(child.path);
+            renderNode(sub, childrenEl);
+            loaded = true;
+            return true;
+          } catch (err) {
+            alert("Gagal membuka folder: " + err.message);
+            return false;
+          }
+        };
+
+        // Pertahankan folder yang tadinya terbuka waktu tree di-refresh
+        if (!loaded && expandedFolders.has(child.path)) {
+          loadChildren().then((ok) => {
+            if (ok) childrenEl.style.display = "block";
+          });
+        }
+
+        folderEl.addEventListener("click", async (e) => {
           if (e.target.closest(".item-actions")) return;
-          childrenEl.style.display = childrenEl.style.display === "none" ? "block" : "none";
+
+          if (!loaded) {
+            if (!(await loadChildren())) return;
+            childrenEl.style.display = "block";
+            expandedFolders.add(child.path);
+            return;
+          }
+
+          const nowHidden = childrenEl.style.display !== "none";
+          childrenEl.style.display = nowHidden ? "none" : "block";
+          if (nowHidden) expandedFolders.delete(child.path);
+          else expandedFolders.add(child.path);
         });
 
         folderEl.querySelector(".btn-rename").addEventListener("click", (e) => {
@@ -873,6 +925,14 @@ async function updateWorkspaceLabel() {
 
   try {
     const info = await BulkImport.getWorkspaceInfo();
+    if (info.recoveredFrom) {
+      alert(
+        `Folder "${info.recoveredFrom}" bikin app crash pas dibuka (kemungkinan kebanyakan file), ` +
+        `jadi otomatis dilepas dan app balik ke workspace bawaan biar nggak crash terus.\n\n` +
+        `Coba buka lagi folder yang lebih spesifik (misal folder "gamemodes"-nya aja, ` +
+        `bukan folder server lengkap), lewat tombol "Buka Folder Project".`
+      );
+    }
     if (info.isCustom) {
       label.textContent = "— " + info.name;
       label.classList.remove("hidden");
@@ -950,4 +1010,6 @@ async function afterWorkspaceChange() {
   const tree = await FileManager.listTree();
   const firstFile = findFirstFile(tree);
   if (firstFile) await openFile(firstFile.path);
+
+  try { await window.Capacitor?.Plugins?.BulkImport?.markLaunchOk(); } catch (e) {}
 }

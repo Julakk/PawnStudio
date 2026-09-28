@@ -28,14 +28,35 @@ public class NativeStoragePlugin extends Plugin {
         call.resolve();
     }
 
+    // Batas jumlah entri per folder yang dikirim ke UI. Folder server SA-MP
+    // bisa punya ribuan file (models, scriptfiles, dst); tanpa batas, HP
+    // low-end bisa kehabisan memori.
+    private static final int MAX_ENTRIES_PER_DIR = 3000;
+
+    // Daftar isi ROOT saja (1 level). Subfolder dikirim sebagai node "lazy"
+    // dan baru dibuka lewat listDir() saat user mengetuknya - seperti VSCode.
     @PluginMethod
     public void listTree(PluginCall call) {
-        File root = getRootDir();
-        JSObject tree = buildTree(root, "");
-        call.resolve(tree);
+        try {
+            call.resolve(buildShallowNode(getRootDir(), ""));
+        } catch (Throwable t) {
+            call.reject("Gagal membaca folder project: " + t.getMessage());
+        }
     }
 
-    private JSObject buildTree(File dir, String relPath) {
+    // Daftar isi SATU folder (1 level), path relatif terhadap root project.
+    @PluginMethod
+    public void listDir(PluginCall call) {
+        String path = call.getString("path", "");
+        try {
+            File dir = path.isEmpty() ? getRootDir() : new File(getRootDir(), path);
+            call.resolve(buildShallowNode(dir, path));
+        } catch (Throwable t) {
+            call.reject("Gagal membaca folder: " + t.getMessage());
+        }
+    }
+
+    private JSObject buildShallowNode(File dir, String relPath) {
         JSObject node = new JSObject();
         node.put("type", "folder");
         node.put("name", relPath.isEmpty() ? "root" : new File(relPath).getName());
@@ -43,18 +64,27 @@ public class NativeStoragePlugin extends Plugin {
 
         JSArray children = new JSArray();
         File[] files = dir.listFiles();
+        int count = 0;
         if (files != null) {
             for (File f : files) {
-                String childRelPath = relPath.isEmpty() ? f.getName() : relPath + "/" + f.getName();
-                if (f.isDirectory()) {
-                    children.put(buildTree(f, childRelPath));
-                } else {
-                    JSObject fileNode = new JSObject();
-                    fileNode.put("type", "file");
-                    fileNode.put("name", f.getName());
-                    fileNode.put("path", childRelPath);
-                    children.put(fileNode);
+                if (count >= MAX_ENTRIES_PER_DIR) {
+                    node.put("truncated", true);
+                    break;
                 }
+                count++;
+
+                String childRelPath = relPath.isEmpty() ? f.getName() : relPath + "/" + f.getName();
+                JSObject child = new JSObject();
+                child.put("name", f.getName());
+                child.put("path", childRelPath);
+                if (f.isDirectory()) {
+                    child.put("type", "folder");
+                    child.put("lazy", true);
+                    child.put("children", new JSArray());
+                } else {
+                    child.put("type", "file");
+                }
+                children.put(child);
             }
         }
         node.put("children", children);

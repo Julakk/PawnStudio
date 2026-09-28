@@ -6,6 +6,7 @@ import com.getcapacitor.BridgeActivity;
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        WorkspaceManager.beginLaunch(this);
         registerPlugin(PawnCompilerPlugin.class);
         registerPlugin(FolderPickerPlugin.class);
         registerPlugin(NativeStoragePlugin.class);
