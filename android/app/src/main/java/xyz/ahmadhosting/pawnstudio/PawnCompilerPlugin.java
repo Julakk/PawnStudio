@@ -108,6 +108,133 @@ public class PawnCompilerPlugin extends Plugin {
         return sb.toString();
     }
 
+    // ==================================================
+    // Normalisasi backslash di #include (tanpa #pragma compat)
+    // ==================================================
+    private static final java.util.regex.Pattern INCLUDE_LINE =
+            java.util.regex.Pattern.compile("^[ \\t]*#[ \\t]*(?:try)?include\\b[^\\r\\n]*",
+                    java.util.regex.Pattern.MULTILINE);
+
+    // Ganti "\" jadi "/" cuma di baris #include / #tryinclude. Panjang teks
+    // TIDAK berubah (1 karakter diganti 1 karakter), dan backslash paling
+    // akhir di baris (line continuation) dibiarkan.
+    private String normalizeIncludeSeparators(String text) {
+        if (text.indexOf('\\') < 0) return text;
+        java.util.regex.Matcher m = INCLUDE_LINE.matcher(text);
+        StringBuffer sb = new StringBuffer();
+        while (m.find()) {
+            String line = m.group();
+            String fixed;
+            if (line.endsWith("\\")) {
+                fixed = line.substring(0, line.length() - 1).replace('\\', '/') + "\\";
+            } else {
+                fixed = line.replace('\\', '/');
+            }
+            m.appendReplacement(sb, java.util.regex.Matcher.quoteReplacement(fixed));
+        }
+        m.appendTail(sb);
+        return sb.toString();
+    }
+
+    private byte[] readAllBytes(File f) throws Exception {
+        java.io.FileInputStream in = new java.io.FileInputStream(f);
+        try {
+            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream((int) Math.max(f.length(), 16));
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = in.read(buf)) != -1) out.write(buf, 0, n);
+            return out.toByteArray();
+        } finally {
+            in.close();
+        }
+    }
+
+    private void mirrorFile(File src, File dst) throws Exception {
+        // Skip kalau salinan masih sinkron (panjang & waktu modifikasi sama)
+        if (dst.exists() && dst.length() == src.length() && dst.lastModified() == src.lastModified()) return;
+
+        // ISO-8859-1 = byte <-> char 1:1, jadi isi file (termasuk karakter
+        // non-UTF8 di komentar) nggak rusak.
+        String text = new String(readAllBytes(src), "ISO-8859-1");
+        byte[] out = normalizeIncludeSeparators(text).getBytes("ISO-8859-1");
+
+        FileOutputStream fos = new FileOutputStream(dst);
+        try {
+            fos.write(out);
+        } finally {
+            fos.close();
+        }
+        dst.setLastModified(src.lastModified());
+    }
+
+    private void deleteRecursive(File f) {
+        File[] kids = f.listFiles();
+        if (kids != null) for (File k : kids) deleteRecursive(k);
+        f.delete();
+    }
+
+    private void mirrorDir(File src, File dst, boolean recursive) throws Exception {
+        if (!dst.exists()) dst.mkdirs();
+
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        File[] children = src.listFiles();
+        if (children != null) {
+            for (File c : children) {
+                if (c.isDirectory()) {
+                    if (recursive) {
+                        seen.add(c.getName());
+                        mirrorDir(c, new File(dst, c.getName()), true);
+                    }
+                } else {
+                    String n = c.getName().toLowerCase();
+                    if (n.endsWith(".inc") || n.endsWith(".pwn") || n.endsWith(".p")) {
+                        seen.add(c.getName());
+                        mirrorFile(c, new File(dst, c.getName()));
+                    }
+                }
+            }
+        }
+
+        // Buang salinan basi (file yang udah dihapus/diganti nama di aslinya)
+        File[] old = dst.listFiles();
+        if (old != null) {
+            for (File o : old) {
+                if (!seen.contains(o.getName())) deleteRecursive(o);
+            }
+        }
+    }
+
+    // Bikin salinan ter-normalisasi (di cache) dari semua folder include
+    // project, dan kembalikan folder salinan itu buat dipakai sebagai -i.
+    // File asli di folder project user tidak pernah diubah.
+    private java.util.List<File> buildIncludeMirror(String relativeFilePath) throws Exception {
+        File root = projectRootDir();
+        File mirrorRoot = new File(getContext().getCacheDir(), "pawn-include-mirror");
+        if (!mirrorRoot.exists()) mirrorRoot.mkdirs();
+
+        java.util.List<File> result = new java.util.ArrayList<>();
+        java.util.Set<String> done = new java.util.HashSet<>();
+
+        for (File dir : resolveProjectIncludeDirs(relativeFilePath)) {
+            String key = dir.getAbsolutePath();
+            if (!done.add(key)) continue;
+
+            File target;
+            if (dir.equals(root)) {
+                // Root project: cuma file .inc/.pwn di root-nya (nggak rekursif)
+                target = new File(mirrorRoot, "_root");
+                mirrorDir(dir, target, false);
+            } else {
+                String rel = key.substring(root.getAbsolutePath().length());
+                if (rel.startsWith("/")) rel = rel.substring(1);
+                target = new File(mirrorRoot, rel);
+                mirrorDir(dir, target, true);
+            }
+            result.add(target);
+        }
+        return result;
+    }
+
     private String sanitizeFileName(String name) {
         String base = name.replaceAll("\\.pwn$", "").replaceAll("\\.inc$", "");
         base = base.replaceAll("[^a-zA-Z0-9_\\-]", "_");
@@ -144,18 +271,14 @@ public class PawnCompilerPlugin extends Plugin {
             if (!workDir.exists()) workDir.mkdirs();
             File sourceFile = new File(workDir, fileName + ".pwn");
             FileWriter writer = new FileWriter(sourceFile);
-            // CATATAN: SEBELUMNYA di sini nulis "#pragma compat 1" di depan
-            // source code, dengan asumsi itu perlu biar path #include yang
-            // pake backslash (gaya Windows, banyak dipakai library kayak YSI)
-            // bisa ke-resolve di Linux/Android. TERNYATA itu salah - compiler
-            // 3.10.10 yang dipakai di sini (community compiler / pawn-lang)
-            // SUDAH otomatis paham backslash sebagai separator folder, TANPA
-            // perlu compat mode. Sementara compat mode itu sendiri malah
-            // bentrok sama kode assembly level (#emit) di internal YSI
-            // (y_amx_impl.inc dkk), bikin error kayak "undefined symbol
-            // AMX_GetGlobal" / "ceildiv" / "floordiv". Referensi:
-            // https://github.com/pawn-lang/YSI-Includes/issues/305
-            writer.write(sourceCode);
+            // Backslash di #include (gaya Windows, dipakai YSI dkk) TIDAK
+            // dikenali compiler di Linux/Android kalau tanpa "#pragma compat 1",
+            // tapi compat 1 sendiri bikin internal YSI rusak (AMX_GetGlobal,
+            // ceildiv, dst). Solusi (sudah dites compile langsung di Linux
+            // dengan compiler 3.10.10 + YSI 5.x): ganti "\" jadi "/" HANYA di
+            // baris #include/#tryinclude, tanpa pragma apapun. File asli user
+            // TIDAK diubah - yang dinormalisasi cuma salinan (mirror) di cache.
+            writer.write(normalizeIncludeSeparators(sourceCode));
             writer.close();
 
             // Output .amx WAJIB ke folder permanen
@@ -167,7 +290,7 @@ public class PawnCompilerPlugin extends Plugin {
             cmdArgs.add("-o" + outputAmx.getAbsolutePath());
             cmdArgs.add("-i" + includeDir().getAbsolutePath());
 
-            for (File extraIncludeDir : resolveProjectIncludeDirs(relativeFilePath)) {
+            for (File extraIncludeDir : buildIncludeMirror(relativeFilePath)) {
                 cmdArgs.add("-i" + extraIncludeDir.getAbsolutePath());
             }
 
