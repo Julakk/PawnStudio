@@ -1,6 +1,7 @@
 package xyz.ahmadhosting.pawnstudio;
 
 import android.util.Log;
+import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
