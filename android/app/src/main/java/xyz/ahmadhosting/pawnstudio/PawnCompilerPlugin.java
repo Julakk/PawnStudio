@@ -495,19 +495,45 @@ public class PawnCompilerPlugin extends Plugin {
     // Batasan: cuma nangkep #include/#tryinclude yang keliatan langsung di
     // teks (gak ngerti makro/#if kompleks) - itu sebabnya loop compile-ulang
     // (di bawah) TETAP ada sebagai jaring pengaman buat yang keluput.
-    private int preScanAndFix(String mainSource, String relativeFilePath, java.util.List<File> allRoots) {
+    // Cache listFiles() per folder SELAMA 1x panggilan preScanAndFix. Tanpa
+    // ini, tiap include yang gagal exact-match bakal listFiles() folder yang
+    // SAMA berkali-kali (misal pawno/include dicek ulang buat tiap 1 dari
+    // puluhan kasus beda huruf) - mahal banget kalau storage-nya lambat
+    // (umum di Android, apalagi folder Android/data/...).
+    private final java.util.Map<String, File[]> dirListingCache = new java.util.HashMap<>();
+
+    private File[] listFilesCached(File dir) {
+        String key = dir.getAbsolutePath();
+        File[] cached = dirListingCache.get(key);
+        if (cached != null) return cached;
+        File[] fresh = dir.listFiles();
+        dirListingCache.put(key, fresh == null ? new File[0] : fresh);
+        return dirListingCache.get(key);
+    }
+
+    private int preScanAndFix(String mainSource, String relativeFilePath, java.util.List<File> allRoots,
+                               java.util.Set<File> trustedNoRecurse) {
         int fixedCount = 0;
         int maxFilesToScan = 4000;
         int processed = 0;
+        long deadline = System.currentTimeMillis() + 20000; // pengaman keras: max 20 detik
+
+        dirListingCache.clear();
 
         java.util.Set<String> visited = new java.util.HashSet<>();
         java.util.ArrayDeque<String> queueContent = new java.util.ArrayDeque<>();
         java.util.ArrayDeque<File> queueOwnDir = new java.util.ArrayDeque<>();
 
+        // ArrayDeque nggak nerima null, jadi kalau file-nya ada di root project
+        // (gak ada subfolder, ownDirMirrorFor balikin null), pakai root mirror
+        // itu sendiri sebagai gantinya (masih masuk akal, dan gak bikin exception).
+        File ownDirForMain = ownDirMirrorFor(relativeFilePath);
         queueContent.add(mainSource);
-        queueOwnDir.add(ownDirMirrorFor(relativeFilePath));
+        queueOwnDir.add(ownDirForMain != null ? ownDirForMain : new File(getContext().getCacheDir(), "pawn-include-mirror/_root"));
 
         while (!queueContent.isEmpty() && processed < maxFilesToScan) {
+            if (System.currentTimeMillis() > deadline) break; // waktu habis, lanjut ke compile apa adanya
+
             String content = queueContent.poll();
             File ownDir = queueOwnDir.poll();
             processed++;
@@ -529,7 +555,7 @@ public class PawnCompilerPlugin extends Plugin {
 
                 if (resolved == null) {
                     for (File base : bases) {
-                        if (applyCaseFix(base, path)) {
+                        if (applyCaseFixCached(base, path)) {
                             resolved = new File(base, path);
                             fixedCount++;
                             break;
@@ -538,7 +564,7 @@ public class PawnCompilerPlugin extends Plugin {
                 }
                 if (resolved == null && !path.toLowerCase().endsWith(".inc")) {
                     for (File base : bases) {
-                        if (applyCaseFix(base, path + ".inc")) {
+                        if (applyCaseFixCached(base, path + ".inc")) {
                             resolved = new File(base, path + ".inc");
                             fixedCount++;
                             break;
@@ -551,6 +577,12 @@ public class PawnCompilerPlugin extends Plugin {
                 if (resolved == null || !resolved.isFile()) continue;
 
                 if (!visited.add(resolved.getAbsolutePath())) continue; // udah pernah discan
+
+                // File yang resolvenya dari folder bawaan app sendiri (bundled
+                // asset / extra) udah PASTI konsisten casing-nya (kita yang
+                // taruh sendiri) - gak perlu ikut dibongkar isinya lagi buat
+                // nyari include lain, ngirit banyak baca file.
+                if (isUnderAny(resolved, trustedNoRecurse)) continue;
 
                 String lower = resolved.getName().toLowerCase();
                 if (lower.endsWith(".inc") || lower.endsWith(".pwn") || lower.endsWith(".p")) {
@@ -565,6 +597,59 @@ public class PawnCompilerPlugin extends Plugin {
             }
         }
         return fixedCount;
+    }
+
+    private boolean isUnderAny(File f, java.util.Set<File> dirs) {
+        if (dirs == null) return false;
+        String path = f.getAbsolutePath();
+        for (File d : dirs) {
+            if (path.startsWith(d.getAbsolutePath() + "/")) return true;
+        }
+        return false;
+    }
+
+    // Sama kayak applyCaseFix, tapi pake cache listFiles() biar folder yang
+    // sama gak di-scan ulang dari nol tiap kali.
+    private boolean applyCaseFixCached(File root, String relPathAsWritten) {
+        if (!root.isDirectory()) return false;
+        if (new File(root, relPathAsWritten).exists()) return false;
+
+        String[] parts = relPathAsWritten.split("/");
+        File currentReal = root;
+        File currentTarget = root;
+
+        for (String part : parts) {
+            if (part.isEmpty() || part.equals(".")) continue;
+            if (part.equals("..")) {
+                if (currentReal.getParentFile() == null) return false;
+                currentReal = currentReal.getParentFile();
+                currentTarget = currentTarget.getParentFile();
+                if (currentTarget == null) return false;
+                continue;
+            }
+
+            File exactReal = new File(currentReal, part);
+            if (exactReal.exists()) {
+                currentReal = exactReal;
+                currentTarget = new File(currentTarget, part);
+                continue;
+            }
+
+            File[] kids = listFilesCached(currentReal);
+            File match = null;
+            for (File k : kids) {
+                if (k.getName().equalsIgnoreCase(part)) { match = k; break; }
+            }
+            if (match == null) return false;
+
+            try {
+                copyTreeAll(match, new File(currentTarget, part));
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+        return false;
     }
 
     private static final java.util.regex.Pattern CANNOT_READ_PATTERN =
@@ -648,7 +733,10 @@ public class PawnCompilerPlugin extends Plugin {
             // perlu compile) - baru compiler dijalanin. Ini yang bikin nggak
             // perlu compile-ulang berkali-kali cuma buat nemu 1-1 kasus beda
             // huruf.
-            int preFixed = preScanAndFix(sourceCode, relativeFilePath, allRoots);
+            java.util.Set<File> trustedDirs = new java.util.HashSet<>();
+            trustedDirs.add(includeDir());
+            trustedDirs.add(extraIncludeDir());
+            int preFixed = preScanAndFix(sourceCode, relativeFilePath, allRoots, trustedDirs);
             if (preFixed > 0) autoFixed.add("(" + preFixed + " path dibenerin lewat pre-scan sebelum compile)");
 
             // Jaring pengaman: sisa kasus yang keluput dari pre-scan (misal
