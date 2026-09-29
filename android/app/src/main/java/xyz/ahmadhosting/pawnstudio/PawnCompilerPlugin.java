@@ -412,9 +412,11 @@ public class PawnCompilerPlugin extends Plugin {
             }
         } else {
             if (src.length() > 4L * 1024 * 1024) return; // jaga-jaga file kegedean
-            byte[] data = readAllBytes(src);
-            FileOutputStream fos = new FileOutputStream(dst);
-            try { fos.write(data); } finally { fos.close(); }
+            // Lewat mirrorFile() (bukan copy mentah) - PENTING: kalau file yang
+            // ke-fix ini sendiri punya #include backslash di dalamnya, itu ikut
+            // dinormalisasi juga. Kalau nggak, compiler bakal gagal lagi di
+            // include DALAM file ini walau folder luarnya udah kebenerin.
+            mirrorFile(src, dst);
         }
     }
 
@@ -464,6 +466,105 @@ public class PawnCompilerPlugin extends Plugin {
             }
         }
         return false;
+    }
+
+    private static final java.util.regex.Pattern INCLUDE_TARGET =
+            java.util.regex.Pattern.compile("^[ \\t]*#[ \\t]*(?:try)?include[ \\t]*[<\"]([^>\"\\r\\n]+)[>\"]",
+                    java.util.regex.Pattern.MULTILINE);
+
+    // Mirror folder buat file "punya sendiri" si Main.pwn (folder tempat dia
+    // ada, contoh "gamemodes/") - dipakai sebagai basis nyari #include yang
+    // pakai path relatif. Rumusnya SAMA PERSIS kayak yang dipakai
+    // buildIncludeMirror, biar hasilnya konsisten dengan folder yang udah
+    // di-mirror di awal compile().
+    private File ownDirMirrorFor(String relativeFilePath) {
+        if (relativeFilePath == null || !relativeFilePath.contains("/")) return null;
+        String parentRel = relativeFilePath.substring(0, relativeFilePath.lastIndexOf("/"));
+        File mirrorRoot = new File(getContext().getCacheDir(), "pawn-include-mirror");
+        return new File(mirrorRoot, parentRel);
+    }
+
+    // ==================================================
+    // Pre-scan: benerin SEMUA beda-huruf yang bisa ketemu lewat baca teks
+    // biasa (bukan lewat compile-gagal-coba-lagi), SEBELUM compiler pernah
+    // dijalanin sekalipun. Ini krusial buat performa: tanpa ini, tiap 1 kasus
+    // beda huruf = 1x compile ULANG DARI NOL (bisa lama banget di HP kalau
+    // kasusnya ada belasan). Dengan ini, hampir semua kasus kebenerin di 1x
+    // baca cepat, dan compiler cuma perlu dijalanin 1-2x aja.
+    //
+    // Batasan: cuma nangkep #include/#tryinclude yang keliatan langsung di
+    // teks (gak ngerti makro/#if kompleks) - itu sebabnya loop compile-ulang
+    // (di bawah) TETAP ada sebagai jaring pengaman buat yang keluput.
+    private int preScanAndFix(String mainSource, String relativeFilePath, java.util.List<File> allRoots) {
+        int fixedCount = 0;
+        int maxFilesToScan = 4000;
+        int processed = 0;
+
+        java.util.Set<String> visited = new java.util.HashSet<>();
+        java.util.ArrayDeque<String> queueContent = new java.util.ArrayDeque<>();
+        java.util.ArrayDeque<File> queueOwnDir = new java.util.ArrayDeque<>();
+
+        queueContent.add(mainSource);
+        queueOwnDir.add(ownDirMirrorFor(relativeFilePath));
+
+        while (!queueContent.isEmpty() && processed < maxFilesToScan) {
+            String content = queueContent.poll();
+            File ownDir = queueOwnDir.poll();
+            processed++;
+
+            java.util.regex.Matcher m = INCLUDE_TARGET.matcher(content);
+            while (m.find()) {
+                String raw = m.group(1).trim();
+                String path = raw.replace('\\', '/');
+
+                java.util.List<File> bases = new java.util.ArrayList<>();
+                if (ownDir != null) bases.add(ownDir);
+                bases.addAll(allRoots);
+
+                File resolved = null;
+                for (File base : bases) {
+                    File direct = new File(base, path);
+                    if (direct.isFile()) { resolved = direct; break; }
+                }
+
+                if (resolved == null) {
+                    for (File base : bases) {
+                        if (applyCaseFix(base, path)) {
+                            resolved = new File(base, path);
+                            fixedCount++;
+                            break;
+                        }
+                    }
+                }
+                if (resolved == null && !path.toLowerCase().endsWith(".inc")) {
+                    for (File base : bases) {
+                        if (applyCaseFix(base, path + ".inc")) {
+                            resolved = new File(base, path + ".inc");
+                            fixedCount++;
+                            break;
+                        }
+                    }
+                }
+
+                // Kalau tetap gak ketemu: biarin, itu beneran hilang - compiler
+                // yang bakal laporin (lewat diagnosa) pas beneran dijalanin.
+                if (resolved == null || !resolved.isFile()) continue;
+
+                if (!visited.add(resolved.getAbsolutePath())) continue; // udah pernah discan
+
+                String lower = resolved.getName().toLowerCase();
+                if (lower.endsWith(".inc") || lower.endsWith(".pwn") || lower.endsWith(".p")) {
+                    try {
+                        String childContent = new String(readAllBytes(resolved), "ISO-8859-1");
+                        queueContent.add(childContent);
+                        queueOwnDir.add(resolved.getParentFile());
+                    } catch (Exception e) {
+                        // abaikan - kalau ada masalah baca, biar ketauan pas compile beneran
+                    }
+                }
+            }
+        }
+        return fixedCount;
     }
 
     private static final java.util.regex.Pattern CANNOT_READ_PATTERN =
@@ -542,7 +643,18 @@ public class PawnCompilerPlugin extends Plugin {
             int exitCode = 1;
             java.util.List<String> autoFixed = new java.util.ArrayList<>();
             java.util.Set<String> triedAndFailed = new java.util.HashSet<>();
-            final int MAX_AUTOFIX_ROUNDS = 40;
+
+            // Benerin semua yang kelihatan lewat baca teks DULU (cepat, gak
+            // perlu compile) - baru compiler dijalanin. Ini yang bikin nggak
+            // perlu compile-ulang berkali-kali cuma buat nemu 1-1 kasus beda
+            // huruf.
+            int preFixed = preScanAndFix(sourceCode, relativeFilePath, allRoots);
+            if (preFixed > 0) autoFixed.add("(" + preFixed + " path dibenerin lewat pre-scan sebelum compile)");
+
+            // Jaring pengaman: sisa kasus yang keluput dari pre-scan (misal
+            // include di dalam #if yang gak dibaca regex) masih ditangani di
+            // sini, tapi harusnya jarang/nggak pernah kepake lagi.
+            final int MAX_AUTOFIX_ROUNDS = 15;
 
             for (int round = 0; round <= MAX_AUTOFIX_ROUNDS; round++) {
                 ProcessBuilder pb = new ProcessBuilder(cmdArgs);
