@@ -208,13 +208,25 @@ public class PawnCompilerPlugin extends Plugin {
         f.delete();
     }
 
+    // Batas waktu keras buat SELURUH proses mirror (nyalin+normalisasi folder
+    // include). Ini jalan SEBELUM pre-scan, dan sebelumnya sama sekali gak
+    // ada batas waktunya - kalau foldernya gede banget & storage-nya lambat,
+    // ini bisa jadi penyebab macet tanpa keliatan apa-apa di Output sama
+    // sekali (karena macetnya sebelum ada satu baris pun yang sempat ditulis).
+    private long mirrorDeadline = 0;
+
     private void mirrorDir(File src, File dst, boolean recursive) throws Exception {
+        if (System.currentTimeMillis() > mirrorDeadline) return; // waktu habis, stop di sini apa adanya
+
         if (!dst.exists()) dst.mkdirs();
 
         java.util.Set<String> seen = new java.util.HashSet<>();
         File[] children = src.listFiles();
+        boolean cutShort = false;
         if (children != null) {
             for (File c : children) {
+                if (System.currentTimeMillis() > mirrorDeadline) { cutShort = true; break; } // waktu habis, sisa file gak ke-mirror
+
                 if (c.isDirectory()) {
                     if (recursive) {
                         seen.add(c.getName());
@@ -235,11 +247,16 @@ public class PawnCompilerPlugin extends Plugin {
             }
         }
 
-        // Buang salinan basi (file yang udah dihapus/diganti nama di aslinya)
-        File[] old = dst.listFiles();
-        if (old != null) {
-            for (File o : old) {
-                if (!seen.contains(o.getName())) deleteRecursive(o);
+        // Buang salinan basi (file yang udah dihapus/diganti nama di aslinya).
+        // SKIP kalau kepotong waktu habis - "seen" jadi gak lengkap, bisa
+        // salah hapus file yang sebenarnya masih valid tapi belum sempat
+        // dicek ulang.
+        if (!cutShort) {
+            File[] old = dst.listFiles();
+            if (old != null) {
+                for (File o : old) {
+                    if (!seen.contains(o.getName())) deleteRecursive(o);
+                }
             }
         }
     }
@@ -248,6 +265,8 @@ public class PawnCompilerPlugin extends Plugin {
     // project, dan kembalikan folder salinan itu buat dipakai sebagai -i.
     // File asli di folder project user tidak pernah diubah.
     private java.util.List<File> buildIncludeMirror(String relativeFilePath) throws Exception {
+        mirrorDeadline = System.currentTimeMillis() + 25000; // maksimal 25 detik buat tahap ini
+
         File root = projectRootDir();
         File mirrorRoot = new File(getContext().getCacheDir(), "pawn-include-mirror");
         if (!mirrorRoot.exists()) mirrorRoot.mkdirs();
