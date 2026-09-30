@@ -767,10 +767,16 @@ public class PawnCompilerPlugin extends Plugin {
                 ProcessBuilder pb = new ProcessBuilder(cmdArgs);
                 pb.environment().put("LD_LIBRARY_PATH", libDir);
                 pb.directory(workDir);
+                // PENTING: gabung stderr ke stdout jadi SATU pipa. Sebelumnya
+                // baca stdout sampai habis dulu baru stderr - kalau outputnya
+                // banyak (gamemode besar = banyak warning), compiler bisa
+                // ke-block nunggu stderr dibaca sementara kita ke-block
+                // nunggu stdout selesai. DEADLOCK, bukan soal lambat/timeout.
+                pb.redirectErrorStream(true);
 
                 Process process = pb.start();
                 stdout = readStream(process.getInputStream());
-                stderr = readStream(process.getErrorStream());
+                stderr = "";
                 exitCode = process.waitFor();
 
                 if (exitCode == 0 && outputAmx.exists()) break;
