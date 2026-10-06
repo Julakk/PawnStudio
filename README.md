@@ -55,7 +55,7 @@ Lihat [CHANGELOG.md](CHANGELOG.md) untuk riwayat perubahan lengkap.
 - [x] Integrasi compiler (`pawncc`) langsung di perangkat
 - [x] Output/console panel untuk hasil compile
 - [x] Bar simbol keyboard & toggle Word Wrap (v1.5.0)
-- [ ] Pengecekan pra-compile (kurung seimbang, karakter nyasar)
+- [x] Pengecekan pra-compile (kurung seimbang, karakter nyasar)
 - [ ] Git integration langsung dari app
 - [x] Pengaturan tema & ukuran font
 - [ ] Custom theme tambahan

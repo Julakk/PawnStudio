@@ -729,9 +729,19 @@ function runCompiler() {
     return;
   }
 
+  // Preflight: cek kurung seimbang & karakter nyasar (tidak memblokir compile)
+  let preLines = [];
+  try {
+    if (window.PawnPreflight) {
+      const found = window.PawnPreflight.check(code);
+      found.forEach((f) => preLines.push({ text: "🔍 Preflight baris " + f.line + ": " + f.msg, type: "warning", lineNumber: f.line }));
+      if (found.length) preLines.push({ text: "🔍 Preflight cuma pengecekan cepat (heuristik), compile tetap dijalankan.", type: "info" });
+    }
+  } catch (e) { preLines = []; }
+
   PawnCompiler.compile({ source: code, fileName: fileName, path: activeTabPath })
     .then((result) => {
-      const lines = [];
+      const lines = preLines.slice();
       if (result.debugCmd) {
         lines.push({ text: "CMD: " + result.debugCmd, type: "info" });
       }

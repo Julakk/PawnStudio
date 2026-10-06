@@ -4,16 +4,15 @@ Semua perubahan penting pada project PawnStudio dicatat di file ini.
 
 ## [Unreleased] - 2026-10-07
 
+### Added
+- **Pengecekan pra-compile (preflight)**: sebelum pawncc jalan, app mengecek kurung `{ }` `( )` `[ ]` yang tidak seimbang, pola karakter nyasar seperti `}(;`, dan karakter aneh di nama `#include`. Temuan muncul di panel Output lengkap dengan nomor baris. Pengecekan ini cuma peringatan, compile tetap dijalankan
+
 ### Fixed
 - Bar simbol: karakter tidak lagi ter-insert saat bar digeser, insert hanya saat tap (sebelumnya bisa menyelipkan `}`, `(`, `;` ke kode dan bikin compile gagal)
 
 ### Changed
 - Bar simbol: ditambah simbol `" % = / \ , & | ! + - * _ : ' @` dan bisa digeser
 - README: fitur dan roadmap disamakan dengan kondisi app
-
-## [Unreleased]
-
-Belum ada perubahan baru yang menunggu rilis.
 
 ## [1.5.0] - HUD Overhaul (Header, Explorer, Status Bar, Symbol Bar)
 
