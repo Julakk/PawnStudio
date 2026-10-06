@@ -21,6 +21,7 @@ Dibangun pakai HTML, CSS, dan JavaScript murni, dibungkus jadi APK Android lewat
 - **Panel output** — error dan warning compile tampil di app
 - **Pengaturan lanjutan** — tema, font, tab size, auto-save, minimap, sticky scope, dan lainnya
 - **Bar simbol** — tombol `{ } ; ( ) [ ]` dkk di atas keyboard (insert saat tap, aman waktu digeser)
+- **Integrasi Git** — init, commit, push, dan pull dari dalam app lewat JGit (token GitHub disimpan di perangkat)
 
 ## 📦 Struktur Proyek
 ## 🚀 Development
@@ -56,7 +57,7 @@ Lihat [CHANGELOG.md](CHANGELOG.md) untuk riwayat perubahan lengkap.
 - [x] Output/console panel untuk hasil compile
 - [x] Bar simbol keyboard & toggle Word Wrap (v1.5.0)
 - [x] Pengecekan pra-compile (kurung seimbang, karakter nyasar)
-- [ ] Git integration langsung dari app
+- [x] Git integration dasar (init, commit, push, pull) langsung dari app
 - [x] Pengaturan tema & ukuran font
 - [ ] Custom theme tambahan
 

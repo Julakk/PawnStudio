@@ -5,6 +5,7 @@ Semua perubahan penting pada project PawnStudio dicatat di file ini.
 ## [Unreleased] - 2026-10-07
 
 ### Added
+- **Git integration (MVP)**: tombol `⎇ Git` di status bar membuka dialog untuk Init, atur remote + token GitHub, lihat perubahan, Commit (semua perubahan), Push, Pull, dan riwayat commit. Jalan lewat JGit native (plugin `Git`), bukan dari JS. Catatan: minSdk naik ke 26 (Android 8.0), clone belum ada
 - **Pengecekan pra-compile (preflight)**: sebelum pawncc jalan, app mengecek kurung `{ }` `( )` `[ ]` yang tidak seimbang, pola karakter nyasar seperti `}(;`, dan karakter aneh di nama `#include`. Temuan muncul di panel Output lengkap dengan nomor baris. Pengecekan ini cuma peringatan, compile tetap dijalankan
 
 ### Fixed
