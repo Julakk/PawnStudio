@@ -2,6 +2,15 @@
 
 Semua perubahan penting pada project PawnStudio dicatat di file ini.
 
+## [Unreleased] - 2026-10-07
+
+### Fixed
+- Bar simbol: karakter tidak lagi ter-insert saat bar digeser, insert hanya saat tap (sebelumnya bisa menyelipkan `}`, `(`, `;` ke kode dan bikin compile gagal)
+
+### Changed
+- Bar simbol: ditambah simbol `" % = / \ , & | ! + - * _ : ' @` dan bisa digeser
+- README: fitur dan roadmap disamakan dengan kondisi app
+
 ## [Unreleased]
 
 Belum ada perubahan baru yang menunggu rilis.

@@ -979,3 +979,7 @@ html, body {
 /* ---- Settings: versi app ---- */
 .setting-about { opacity: 0.7; }
 #symbol-bar{touch-action:pan-x;}
+
+/* bar simbol: bisa digeser, tombol gak mengecil */
+#symbol-bar{overflow-x:auto;touch-action:pan-x;}
+#symbol-bar button{flex:0 0 auto;min-width:38px;}

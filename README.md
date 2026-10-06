@@ -17,6 +17,10 @@ Dibangun pakai HTML, CSS, dan JavaScript murni, dibungkus jadi APK Android lewat
 - **Bar simbol di atas keyboard** — `{ } ; ( ) [ ] # < >` dan Tab, tinggal ketuk tanpa gonta-ganti layout keyboard
 - **Explorer rapi** — ikon per tipe file, file binary (`.dll`/`.exe`/`.so`) diredupkan
 - **Auto build APK** — tiap push ke `main`, GitHub Actions otomatis build APK dan bikin Release
+- **Compiler pawncc native** — compile `.pwn` langsung di HP, hasil `.amx` ke folder `compiled/`, plus diagnosa include dan auto-fix beda huruf besar/kecil path
+- **Panel output** — error dan warning compile tampil di app
+- **Pengaturan lanjutan** — tema, font, tab size, auto-save, minimap, sticky scope, dan lainnya
+- **Bar simbol** — tombol `{ } ; ( ) [ ]` dkk di atas keyboard (insert saat tap, aman waktu digeser)
 
 ## 📦 Struktur Proyek
 ## 🚀 Development
@@ -51,6 +55,7 @@ Lihat [CHANGELOG.md](CHANGELOG.md) untuk riwayat perubahan lengkap.
 - [x] Integrasi compiler (`pawncc`) langsung di perangkat
 - [x] Output/console panel untuk hasil compile
 - [x] Bar simbol keyboard & toggle Word Wrap (v1.5.0)
+- [ ] Pengecekan pra-compile (kurung seimbang, karakter nyasar)
 - [ ] Git integration langsung dari app
 - [x] Pengaturan tema & ukuran font
 - [ ] Custom theme tambahan
