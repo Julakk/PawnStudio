@@ -908,7 +908,7 @@ function clearErrorHighlight() {
 
 const SETTINGS_KEY = "pawnstudio_settings";
 const SETTINGS_VERSION = 2;
-const APP_VERSION = "1.5.0";
+const APP_VERSION = "1.5.1";
 
 function loadSettings() {
   const raw = localStorage.getItem(SETTINGS_KEY);
@@ -916,7 +916,7 @@ function loadSettings() {
   if (!raw) return defaults;
   try {
     const saved = JSON.parse(raw);
-    // Migrasi v1.5.0: word wrap sekarang default mati, termasuk buat user lama
+    // Migrasi v1.5.1: word wrap sekarang default mati, termasuk buat user lama
     if ((saved.settingsVersion || 0) < SETTINGS_VERSION) {
       saved.wordWrap = false;
       saved.settingsVersion = SETTINGS_VERSION;
