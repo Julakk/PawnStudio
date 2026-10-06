@@ -832,3 +832,149 @@ html, body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ==========================================================
+   v1.5.0 - Rapihin HUD: header, explorer, status bar, symbol bar
+   ========================================================== */
+
+/* ---- Header ---- */
+#topbar { gap: 6px; }
+#app-title { flex-shrink: 0; }
+#workspace-name {
+  margin-left: 0;
+  padding: 3px 10px;
+  max-width: 55%;
+  flex: 0 1 auto;
+  min-width: 0;
+  background-color: #2d2d30;
+  border: 1px solid #3c3c3c;
+  border-radius: 12px;
+  color: #b8b8b8;
+  font-size: 12px;
+}
+#topbar-actions { margin-left: auto; flex-shrink: 0; }
+#btn-run { color: #4ec9b0; }
+
+/* ---- Explorer ---- */
+#sidebar-header { padding: 0 8px 0 12px; }
+#sidebar-actions {
+  flex-wrap: nowrap;
+  max-width: none;
+  gap: 6px;
+}
+#sidebar-actions button {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  color: #cfcfcf;
+}
+#open-editors-header { padding: 8px 12px 4px; }
+
+.file-item, .folder-item {
+  padding: 8px 10px;
+  min-height: 36px;
+  font-size: 14px;
+  gap: 8px;
+}
+.file-item .icon, .folder-item .icon { display: flex; align-items: center; }
+.folder-item .icon svg { color: #dcb67a; width: 16px; height: 16px; }
+.folder-item .entry-name { color: #e2e2e2; font-weight: 500; }
+.folder-children { padding-left: 12px; border-left: 1px solid #333; margin-left: 17px; }
+
+/* file binary (.dll/.exe/.so/dst) diredupkan */
+.file-item.file-binary { opacity: 0.45; }
+.file-item.file-binary .icon svg { color: #8a8a8a !important; }
+.file-item.file-binary.active { opacity: 0.8; }
+
+/* ikon per tipe, lebih kontras */
+.file-item .icon svg { color: #7aa7c7; }
+.file-item[data-ext="pwn"] .icon svg { color: #b58cf0; }
+.file-item[data-ext="inc"] .icon svg { color: #7fc4ff; }
+.file-item[data-ext="bat"] .icon svg,
+.file-item[data-ext="sh"] .icon svg { color: #8fd18f; }
+.file-item[data-ext="cfg"] .icon svg,
+.file-item[data-ext="ini"] .icon svg,
+.file-item[data-ext="yml"] .icon svg { color: #d7a96b; }
+
+/* ---- Status bar ---- */
+#statusbar { font-size: 12px; gap: 8px; }
+#statusbar-left, #statusbar-right { gap: 10px; min-width: 0; }
+#status-file {
+  max-width: 38vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#status-compile {
+  padding: 1px 8px;
+  border-radius: 10px;
+  background-color: rgba(0, 0, 0, 0.22);
+  white-space: nowrap;
+  font-size: 11px;
+}
+#status-compile.running { background-color: rgba(255, 255, 255, 0.22); }
+#status-compile.success { background-color: #1f8a4c; }
+#status-compile.fail { background-color: #c0392b; }
+
+#status-problems {
+  border: none;
+  font-size: 11px;
+  background: none;
+  color: #fff;
+  padding: 0;
+  gap: 6px;
+}
+#status-problems .count-error,
+#status-problems .count-warning {
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-weight: 600;
+  opacity: 1;
+}
+#status-problems .count-error { background-color: #c0392b; }
+#status-problems .count-warning { background-color: #b7791f; }
+
+#status-cursor { white-space: nowrap; }
+
+#status-wrap {
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: transparent;
+  color: #ffffff;
+  border-radius: 10px;
+  padding: 1px 8px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+#status-wrap.on { background-color: rgba(255, 255, 255, 0.28); }
+#status-wrap:active { background-color: rgba(255, 255, 255, 0.4); }
+
+/* ---- Symbol bar (di atas keyboard) ---- */
+#symbol-bar {
+  flex-shrink: 0;
+  display: flex;
+  gap: 6px;
+  padding: 6px 8px;
+  overflow-x: auto;
+  background-color: #252526;
+  border-top: 1px solid #3c3c3c;
+  -webkit-overflow-scrolling: touch;
+}
+#symbol-bar.hidden { display: none; }
+#symbol-bar button {
+  flex: 1 0 auto;
+  min-width: 38px;
+  height: 36px;
+  padding: 0 10px;
+  background-color: #3a3a3d;
+  color: #e6e6e6;
+  border: none;
+  border-radius: 6px;
+  font-family: "Roboto Mono", Menlo, monospace;
+  font-size: 16px;
+}
+#symbol-bar button:first-child { font-size: 12px; flex: 0 0 auto; }
+#symbol-bar button:active { background-color: #094771; }
+
+/* ---- Settings: versi app ---- */
+.setting-about { opacity: 0.7; }

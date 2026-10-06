@@ -10,6 +10,24 @@ const ICON_TRASH = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" 
 const ICON_CLOSE = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
 const ICON_RENAME = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>';
 
+const ICON_CODE = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="10 13 8 15 10 17"/><polyline points="14 13 16 15 14 17"/></svg>';
+const ICON_BINARY = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>';
+const ICON_TEXT = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg>';
+
+const BINARY_EXTS = new Set(["dll", "exe", "so", "amx", "bin", "dat", "db", "zip", "png", "jpg", "jpeg", "dff", "txd", "col"]);
+const CODE_EXTS = new Set(["pwn", "inc", "p", "js", "json", "css", "html", "bat", "sh", "cfg", "ini", "yml", "yaml"]);
+
+function isBinaryFile(name) {
+  return BINARY_EXTS.has(getFileExt(name));
+}
+
+function getFileIcon(name) {
+  const ext = getFileExt(name);
+  if (BINARY_EXTS.has(ext)) return ICON_BINARY;
+  if (CODE_EXTS.has(ext)) return ICON_CODE;
+  return ICON_TEXT;
+}
+
 const MONACO_CDN = window.location.origin + "/vs";
 
 let monacoEditor = null;
@@ -37,6 +55,7 @@ require(["vs/editor/editor.main"], async function () {
   await renderFileTree();
   bindGlobalActions();
   initSettingsUI();
+  initSymbolBar();
   await updateWorkspaceLabel();
 
   // Auto-buka file pertama yang ada
@@ -59,12 +78,19 @@ function initEditor() {
     fontSize: 14,
     minimap: { enabled: false },
     scrollBeyondLastLine: false,
-    wordWrap: "on",
+    wordWrap: "off",
     tabSize: 4,
     smoothScrolling: true,
   });
 
   document.getElementById("editor-container").classList.add("empty");
+
+  monacoEditor.onDidFocusEditorText(() => setSymbolBarVisible(true));
+  monacoEditor.onDidBlurEditorText(() => {
+    setTimeout(() => {
+      if (!monacoEditor.hasTextFocus()) setSymbolBarVisible(false);
+    }, 200);
+  });
 
   monacoEditor.onDidChangeCursorPosition((e) => {
     const statusCursor = document.getElementById("status-cursor");
@@ -283,7 +309,7 @@ function renderTabs() {
 
     const icon = document.createElement("span");
     icon.className = "tab-icon";
-    icon.innerHTML = ICON_FILE;
+    icon.innerHTML = getFileIcon(fileName);
 
     const name = document.createElement("span");
     name.className = "tab-name";
@@ -442,10 +468,10 @@ function renderNode(node, container) {
         container.appendChild(childrenEl);
       } else {
         const fileEl = document.createElement("div");
-        fileEl.className = "file-item" + (child.path === activeTabPath ? " active" : "");
+        fileEl.className = "file-item" + (child.path === activeTabPath ? " active" : "") + (isBinaryFile(child.name) ? " file-binary" : "");
         fileEl.setAttribute("data-ext", getFileExt(child.name));
         fileEl.innerHTML = `
-          <span class="icon">${ICON_FILE}</span>
+          <span class="icon">${getFileIcon(child.name)}</span>
           <span class="entry-name">${escapeHtml(child.name)}</span>
           <span class="item-actions">
             <button class="btn-rename">${ICON_RENAME}</button>
@@ -694,6 +720,8 @@ function runCompiler() {
   clearErrorHighlight();
   showOutputPanel();
   setOutputLines([{ text: "Compiling " + fileName + "...", type: "info" }]);
+  const compileStart = Date.now();
+  setCompileStatus("running");
 
   const PawnCompiler = window.Capacitor?.Plugins?.PawnCompiler;
   if (!PawnCompiler) {
@@ -756,11 +784,27 @@ function runCompiler() {
 
         setOutputLines(shown);
         updateProblemsStatusBar(lines);
+        setCompileStatus(result.success ? "success" : "fail", Date.now() - compileStart);
     })
     .catch((err) => {
       setOutputLines([{ text: "Error menjalankan compiler: " + err.message, type: "error" }]);
       updateProblemsStatusBar([]);
+      setCompileStatus("fail", Date.now() - compileStart);
     });
+}
+
+function setCompileStatus(state, ms) {
+  const el = document.getElementById("status-compile");
+  if (!el) return;
+  const secs = ms != null ? " (" + (ms / 1000).toFixed(1) + "s)" : "";
+  const labels = {
+    idle: "● Siap",
+    running: "⟳ Compiling...",
+    success: "✓ Compile OK" + secs,
+    fail: "✕ Compile gagal" + secs,
+  };
+  el.className = state;
+  el.textContent = labels[state] || labels.idle;
 }
 
 function updateProblemsStatusBar(lines) {
@@ -863,13 +907,21 @@ function clearErrorHighlight() {
 // ============ Settings ============
 
 const SETTINGS_KEY = "pawnstudio_settings";
+const SETTINGS_VERSION = 2;
+const APP_VERSION = "1.5.0";
 
 function loadSettings() {
   const raw = localStorage.getItem(SETTINGS_KEY);
-  const defaults = { fontSize: 14, theme: "vs-dark", wordWrap: true };
+  const defaults = { fontSize: 14, theme: "vs-dark", wordWrap: false, settingsVersion: SETTINGS_VERSION };
   if (!raw) return defaults;
   try {
-    return { ...defaults, ...JSON.parse(raw) };
+    const saved = JSON.parse(raw);
+    // Migrasi v1.5.0: word wrap sekarang default mati, termasuk buat user lama
+    if ((saved.settingsVersion || 0) < SETTINGS_VERSION) {
+      saved.wordWrap = false;
+      saved.settingsVersion = SETTINGS_VERSION;
+    }
+    return { ...defaults, ...saved };
   } catch {
     return defaults;
   }
@@ -886,6 +938,55 @@ function applySettings(settings) {
     wordWrap: settings.wordWrap ? "on" : "off",
   });
   monaco.editor.setTheme(settings.theme);
+  updateWrapButton(settings.wordWrap);
+}
+
+function updateWrapButton(on) {
+  const btn = document.getElementById("status-wrap");
+  if (!btn) return;
+  btn.textContent = "Wrap: " + (on ? "On" : "Off");
+  btn.classList.toggle("on", !!on);
+}
+
+function toggleWordWrap() {
+  const cur = loadSettings();
+  const next = { ...cur, wordWrap: !cur.wordWrap, settingsVersion: SETTINGS_VERSION };
+  saveSettings(next);
+  applySettings(next);
+  const cb = document.getElementById("setting-wordwrap");
+  if (cb) cb.checked = next.wordWrap;
+}
+
+// ============ Bar simbol di atas keyboard ============
+function setSymbolBarVisible(show) {
+  const bar = document.getElementById("symbol-bar");
+  if (bar) bar.classList.toggle("hidden", !show);
+}
+
+function initSymbolBar() {
+  const bar = document.getElementById("symbol-bar");
+  if (!bar) return;
+
+  // pointerdown + preventDefault: editor tetap fokus, keyboard gak nutup
+  bar.addEventListener("pointerdown", (e) => {
+    const btn = e.target.closest("button[data-ins]");
+    if (!btn) return;
+    e.preventDefault();
+    if (!monacoEditor) return;
+    const ins = btn.getAttribute("data-ins");
+    monacoEditor.focus();
+    if (ins === "Tab") monacoEditor.trigger("symbolbar", "tab", null);
+    else monacoEditor.trigger("symbolbar", "type", { text: ins });
+  });
+
+  const sw = document.getElementById("status-wrap");
+  if (sw) sw.addEventListener("click", toggleWordWrap);
+
+  const sp = document.getElementById("status-problems");
+  if (sp) sp.addEventListener("click", () => showOutputPanel());
+
+  const v = document.getElementById("app-version");
+  if (v) v.textContent = "v" + APP_VERSION;
 }
 
 function initSettingsUI() {
@@ -916,6 +1017,7 @@ function initSettingsUI() {
       fontSize: parseInt(document.getElementById("setting-font-size").value, 10),
       theme: document.getElementById("setting-theme").value,
       wordWrap: document.getElementById("setting-wordwrap").checked,
+      settingsVersion: SETTINGS_VERSION,
     };
     saveSettings(newSettings);
     applySettings(newSettings);

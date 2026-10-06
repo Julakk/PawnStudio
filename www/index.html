@@ -105,14 +105,21 @@
       </div>
     </div>
 
+    <!-- Bar simbol di atas keyboard -->
+    <div id="symbol-bar" class="hidden">
+      <button data-ins="Tab">Tab</button><button data-ins="{">{</button><button data-ins="}">}</button><button data-ins=";">;</button><button data-ins="(">(</button><button data-ins=")">)</button><button data-ins="[">[</button><button data-ins="]">]</button><button data-ins="#">#</button><button data-ins="&lt;">&lt;</button><button data-ins="&gt;">&gt;</button>
+    </div>
+
     <!-- Bottom status bar -->
     <div id="statusbar">
       <div id="statusbar-left">
         <span id="status-file">no file open</span>
+        <span id="status-compile" class="idle" title="Status compile">● Siap</span>
       </div>
       <div id="statusbar-right">
-        <span id="status-problems" class="hidden"></span>
+        <button id="status-problems" class="hidden" title="Lihat Output"></button>
         <span id="status-cursor">Ln 1, Col 1</span>
+        <button id="status-wrap" title="Word wrap (ketuk buat ganti)">Wrap: Off</button>
         <span id="status-lang">PAWN</span>
       </div>
     </div>
@@ -145,7 +152,11 @@
         </div>
         <div class="setting-row">
           <label>Word Wrap</label>
-          <input type="checkbox" id="setting-wordwrap" checked />
+          <input type="checkbox" id="setting-wordwrap" />
+        </div>
+        <div class="setting-row setting-about">
+          <label>PawnStudio</label>
+          <span id="app-version">v1.5.0</span>
         </div>
       </div>
     </div>

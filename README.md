@@ -1,5 +1,7 @@
 # PawnStudio
 
+![Versi](https://img.shields.io/badge/versi-1.5.0-9b6bd6) ![Platform](https://img.shields.io/badge/platform-Android-3ddc84)
+
 Mobile code editor untuk bahasa **PAWN**, dibangun khusus buat komunitas SA-MP / Open.MP yang mau ngoding langsung dari Android — gak perlu buka laptop.
 
 Dibangun pakai HTML, CSS, dan JavaScript murni, dibungkus jadi APK Android lewat [Capacitor](https://capacitorjs.com/).
@@ -10,6 +12,10 @@ Dibangun pakai HTML, CSS, dan JavaScript murni, dibungkus jadi APK Android lewat
 - **Syntax highlighting PAWN** — keyword, string, comment, angka, dan function call punya warna sendiri
 - **File Explorer** — bikin, buka, dan hapus file/folder langsung dari sidebar
 - **Multi-tab** — buka beberapa file `.pwn` sekaligus, ada indikator unsaved changes
+- **Compiler PAWN bawaan** — tekan tombol Run, hasil compile tampil di Output Panel (error/warning bisa diketuk buat lompat ke baris)
+- **Status bar informatif** — status compile, badge error/warning, posisi kursor, dan tombol toggle Word Wrap
+- **Bar simbol di atas keyboard** — `{ } ; ( ) [ ] # < >` dan Tab, tinggal ketuk tanpa gonta-ganti layout keyboard
+- **Explorer rapi** — ikon per tipe file, file binary (`.dll`/`.exe`/`.so`) diredupkan
 - **Auto build APK** — tiap push ke `main`, GitHub Actions otomatis build APK dan bikin Release
 
 ## 📦 Struktur Proyek
@@ -33,6 +39,8 @@ APK di-build otomatis lewat GitHub Actions tiap kali push ke branch `main`. Hasi
 - Tab **Actions** → pilih run terbaru → bagian **Artifacts**
 - Tab **Releases** (dibuat otomatis tiap build sukses)
 
+Lihat [CHANGELOG.md](CHANGELOG.md) untuk riwayat perubahan lengkap.
+
 ## 🗺️ Roadmap
 
 - [x] Struktur editor dasar dengan Monaco
@@ -40,10 +48,12 @@ APK di-build otomatis lewat GitHub Actions tiap kali push ke branch `main`. Hasi
 - [x] CI/CD build APK otomatis
 - [x] Syntax highlighting PAWN
 - [ ] Auto-complete / IntelliSense untuk fungsi PAWN umum
-- [ ] Integrasi compiler (`pawncc`) via backend
-- [ ] Output/console panel untuk hasil compile
+- [x] Integrasi compiler (`pawncc`) langsung di perangkat
+- [x] Output/console panel untuk hasil compile
+- [x] Bar simbol keyboard & toggle Word Wrap (v1.5.0)
 - [ ] Git integration langsung dari app
-- [ ] Custom theme & font size settings
+- [x] Pengaturan tema & ukuran font
+- [ ] Custom theme tambahan
 
 ## 👤 Author
 
