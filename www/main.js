@@ -738,8 +738,24 @@ function runCompiler() {
         }
       }
 
-      setOutputLines(lines);
-      updateProblemsStatusBar(lines);
+      const MAX_WARN = 100;
+        let shownWarn = 0;
+        let hiddenWarn = 0;
+        const shown = lines.filter((l) => {
+          if (l.type !== "warning") return true;
+          if (shownWarn < MAX_WARN) { shownWarn++; return true; }
+          hiddenWarn++;
+          return false;
+        });
+        if (hiddenWarn > 0) {
+          shown.splice(shown.length - 1, 0, {
+            text: `⚠ ${hiddenWarn} warning lainnya disembunyikan (total ${shownWarn + hiddenWarn})`,
+            type: "info",
+          });
+        }
+
+        setOutputLines(shown);
+        updateProblemsStatusBar(lines);
     })
     .catch((err) => {
       setOutputLines([{ text: "Error menjalankan compiler: " + err.message, type: "error" }]);
