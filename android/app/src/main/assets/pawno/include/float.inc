@@ -34,6 +34,7 @@ native Float:float(value);
 /**************************************************/
 /* Convert a string into a floating point value */
 native Float:strfloat(const string[]);
+native Float:floatstr(const string[]); // native versi SA-MP
 
 /**************************************************/
 /* Multiple two floats together */

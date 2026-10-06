@@ -118,17 +118,20 @@ public class PawnCompilerPlugin extends Plugin {
 
         for (String name : assetFiles) {
             File outFile = new File(dir, name);
-            if (outFile.exists()) continue;
 
             InputStream input = getContext().getAssets().open("pawno/include/" + name);
-            FileOutputStream output = new FileOutputStream(outFile);
+            java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
             byte[] buffer = new byte[4096];
             int read;
-            while ((read = input.read(buffer)) != -1) {
-                output.write(buffer, 0, read);
-            }
-            output.close();
+            while ((read = input.read(buffer)) != -1) bos.write(buffer, 0, read);
             input.close();
+            byte[] data = bos.toByteArray();
+
+            // Timpa kalau belum ada / ukurannya beda (APK baru bawa include baru)
+            if (outFile.exists() && outFile.length() == data.length) continue;
+            FileOutputStream output = new FileOutputStream(outFile);
+            output.write(data);
+            output.close();
         }
     }
 
