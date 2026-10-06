@@ -69,4 +69,4 @@ Bagian dari ekosistem **Ahmad Store** (hosting server game SA-MP/Open.MP, FiveM,
 
 ## 📄 License
 
-Belum ditentukan.
+[LICENSE.md](LICENSE.md)
