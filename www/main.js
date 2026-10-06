@@ -968,15 +968,47 @@ function initSymbolBar() {
   if (!bar) return;
 
   // pointerdown + preventDefault: editor tetap fokus, keyboard gak nutup
-  bar.addEventListener("pointerdown", (e) => {
-    const btn = e.target.closest("button[data-ins]");
-    if (!btn) return;
-    e.preventDefault();
+  // Tap-only: insert pas jari diangkat, bukan pas nempel.
+  // Jadi geser (scroll) bar simbol gak ikut nge-insert karakter.
+  const MOVE_TOL = 10;
+  let down = null;
+
+  function doInsert(btn) {
     if (!monacoEditor) return;
     const ins = btn.getAttribute("data-ins");
     monacoEditor.focus();
     if (ins === "Tab") monacoEditor.trigger("symbolbar", "tab", null);
     else monacoEditor.trigger("symbolbar", "type", { text: ins });
+  }
+
+  // jaga editor tetap fokus & keyboard gak nutup
+  bar.addEventListener("mousedown", (e) => {
+    if (e.target.closest("button[data-ins]")) e.preventDefault();
+  });
+
+  bar.addEventListener("pointerdown", (e) => {
+    const btn = e.target.closest("button[data-ins]");
+    if (!btn) { down = null; return; }
+    e.preventDefault();
+    down = { x: e.clientX, y: e.clientY, btn: btn };
+  });
+
+  bar.addEventListener("pointermove", (e) => {
+    if (!down) return;
+    if (Math.abs(e.clientX - down.x) > MOVE_TOL || Math.abs(e.clientY - down.y) > MOVE_TOL) {
+      down = null; // user lagi scroll, batalin
+    }
+  });
+
+  bar.addEventListener("pointercancel", () => { down = null; });
+
+  bar.addEventListener("pointerup", (e) => {
+    if (!down) return;
+    const btn = e.target.closest("button[data-ins]");
+    const ok = btn && btn === down.btn;
+    const d = down;
+    down = null;
+    if (ok) doInsert(d.btn);
   });
 
   const sw = document.getElementById("status-wrap");
