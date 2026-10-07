@@ -60,6 +60,20 @@ function doSave(){
 
 function showBar(on){if(bar)bar.className=(on&&S.toolbar)?'show':'';}
 
+var focused=false,kbOpen=false,baseH=0,baseW=0;
+function refreshBar(){showBar(focused&&kbOpen);}
+function kbCheck(){
+  var vv=window.visualViewport;
+  var h=vv?vv.height:window.innerHeight,w=window.innerWidth;
+  if(!baseH||w!==baseW){baseH=h;baseW=w;}
+  if(h>baseH)baseH=h;
+  var open=(baseH-h)>120;
+  if(open===kbOpen)return;
+  kbOpen=open;
+  if(!open&&focused){var a=document.activeElement;if(a&&a.blur)a.blur();}
+  refreshBar();
+}
+
 function buildBar(){
   bar=el('div');bar.id='v151-bar';
   function btn(label,fn){
@@ -157,8 +171,8 @@ function bindAll(){
       if(!S.autosave)return;
       clearTimeout(saveT);saveT=setTimeout(doSave,2000);
     });
-    ed.onDidFocusEditorText(function(){lastEd=ed;showBar(true);});
-    ed.onDidBlurEditorText(function(){setTimeout(function(){if(!ed.hasTextFocus())showBar(false);},200);});
+    ed.onDidFocusEditorText(function(){lastEd=ed;focused=true;refreshBar();});
+    ed.onDidBlurEditorText(function(){setTimeout(function(){if(!ed.hasTextFocus()){focused=false;refreshBar();}},200);});
   });
 }
 
@@ -166,6 +180,9 @@ function init(){
   buildBar();buildPanel();
   setInterval(function(){bindAll();hook();},1000);
   bindAll();
+  kbCheck();
+  window.addEventListener('resize',kbCheck);
+  if(window.visualViewport)window.visualViewport.addEventListener('resize',kbCheck);
   if(S.awake)awake();
   window.PawnV151={open:open,state:function(){return S;}};
   setTimeout(function(){if(!M())toast('v1.5.2: Monaco tidak terdeteksi');},20000);
