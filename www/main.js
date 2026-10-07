@@ -661,12 +661,21 @@ function bindUploadActions() {
 
 // ============ Global UI Actions ============
 
+function openFindReplace() {
+  if (!monacoEditor) return;
+  monacoEditor.focus();
+  const act = monacoEditor.getAction("editor.action.startFindReplace");
+  if (act) act.run();
+}
+
 function bindGlobalActions() {
   document.getElementById("btn-run").addEventListener("click", () => {
     runCompiler();
   });
 
   document.getElementById("btn-save").addEventListener("click", saveActiveTab);
+  document.getElementById("btn-find").addEventListener("click", openFindReplace);
+  document.getElementById("activity-search").addEventListener("click", openFindReplace);
 
   document.getElementById("btn-new-file").addEventListener("click", handleNewFile);
   document.getElementById("btn-new-folder").addEventListener("click", handleNewFolder);
@@ -918,7 +927,7 @@ function clearErrorHighlight() {
 
 const SETTINGS_KEY = "pawnstudio_settings";
 const SETTINGS_VERSION = 2;
-const APP_VERSION = "1.5.5";
+const APP_VERSION = "1.5.6";
 
 function loadSettings() {
   const raw = localStorage.getItem(SETTINGS_KEY);

@@ -2,6 +2,11 @@
 
 Semua perubahan penting pada project PawnStudio dicatat di file ini.
 
+## [1.5.6] - 2026-10-08
+
+### Added
+- Tombol Cari / Ganti di header dan di ikon pencarian sidebar (memakai panel Find/Replace bawaan Monaco).
+
 ## [1.5.5] - 2026-10-08
 
 ### Fixed
