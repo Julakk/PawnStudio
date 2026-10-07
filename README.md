@@ -65,11 +65,11 @@ APK di-build otomatis lewat GitHub Actions tiap kali push ke branch `main`. Hasi
 - [x] Compiler `pawncc` native + panel output
 - [x] Preflight sebelum compile (kurung seimbang, karakter nyasar)
 - [x] Perbaikan bar simbol
+- [x] Folder picker native (SAF)
+- [x] Auto-complete / IntelliSense untuk fungsi PAWN umum
+- [x] Custom theme & font size settings
 - [ ] Manajemen file include
 - [ ] Multi-file compile
-- [ ] Folder picker native (SAF)
-- [ ] Auto-complete / IntelliSense untuk fungsi PAWN umum
-- [ ] Custom theme & font size settings
 
 ## 👤 Author
 
