@@ -2,6 +2,11 @@
 
 Semua perubahan penting pada project PawnStudio dicatat di file ini.
 
+## [1.5.5] - 2026-10-08
+
+### Fixed
+- Label versi di Settings dan Pengaturan Lanjutan sekarang sesuai versi rilis (sebelumnya masih menampilkan v1.5.2 di build 1.5.3 dan 1.5.4).
+
 ## [1.5.4] - 2026-10-08
 
 ### Added
