@@ -661,11 +661,26 @@ function bindUploadActions() {
 
 // ============ Global UI Actions ============
 
-function openFindReplace() {
+function openFindReplaceLama() {
   if (!monacoEditor) return;
   monacoEditor.focus();
   const act = monacoEditor.getAction("editor.action.startFindReplace");
   if (act) act.run();
+}
+
+function openFindReplace() {
+  if (!monacoEditor) { alert("Editor belum siap"); return; }
+  monacoEditor.focus();
+  const ids = ["editor.action.startFindReplace", "actions.find", "editor.action.startFind"];
+  for (const id of ids) {
+    const act = monacoEditor.getAction(id);
+    if (act) {
+      Promise.resolve(act.run()).catch((e) => alert("Cari gagal: " + e.message));
+      return;
+    }
+  }
+  try { monacoEditor.trigger("btn-find", "actions.find", null); return; } catch (e) {}
+  alert("Panel Cari tidak tersedia di build Monaco ini");
 }
 
 function bindGlobalActions() {
@@ -927,7 +942,7 @@ function clearErrorHighlight() {
 
 const SETTINGS_KEY = "pawnstudio_settings";
 const SETTINGS_VERSION = 2;
-const APP_VERSION = "1.5.6";
+const APP_VERSION = "1.5.7";
 
 function loadSettings() {
   const raw = localStorage.getItem(SETTINGS_KEY);
