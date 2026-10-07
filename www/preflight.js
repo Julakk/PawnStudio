@@ -27,6 +27,7 @@
         if (c === '"' || c === "'") {
           var q = c; j++;
           while (j < l.length && l[j] !== q) { if (l[j] === "\\") j++; j++; }
+          if (j >= l.length) issues.push({ line: n, level: "error", msg: "String atau karakter belum ditutup" });
           j++; continue;
         }
         if (c === "{" || c === "(" || c === "[") {
