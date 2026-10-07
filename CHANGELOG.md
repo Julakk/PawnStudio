@@ -2,6 +2,11 @@
 
 Semua perubahan penting pada project PawnStudio dicatat di file ini.
 
+## [1.5.3] - 2026-10-08
+
+### Changed
+- Auto-complete: daftar fungsi SA-MP diperlengkap (player, kendaraan, textdraw, object, server, string, float, PVar, file).
+
 ## [1.5.2] - 2026-10-07
 
 ### Fixed
