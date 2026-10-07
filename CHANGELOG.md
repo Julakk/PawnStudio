@@ -2,7 +2,7 @@
 
 Semua perubahan penting pada project PawnStudio dicatat di file ini.
 
-## [Unreleased] - 2026-10-07
+## [1.5.1] - 2026-10-07
 
 ### Removed
 - Fitur Git di dalam app (init, commit, push, pull) beserta plugin native GitPlugin dan dependensi JGit, karena APK dirilis publik.
