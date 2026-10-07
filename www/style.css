@@ -985,19 +985,3 @@ html, body {
 #symbol-bar button{flex:0 0 auto;min-width:38px;}
 
 /* ===== Git dialog ===== */
-#status-git{background:none;border:none;color:inherit;font:inherit;padding:0 8px;}
-#git-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:flex-end;justify-content:center;}
-#git-overlay.hidden{display:none;}
-#git-panel{width:100%;max-width:560px;max-height:85vh;overflow-y:auto;background:#252526;color:#ddd;border-radius:14px 14px 0 0;padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));box-sizing:border-box;font-size:14px;}
-#git-panel .hidden{display:none;}
-#git-head{display:flex;justify-content:space-between;align-items:center;font-size:16px;margin-bottom:8px;}
-#git-panel input{width:100%;box-sizing:border-box;margin:4px 0;padding:9px;background:#1e1e1e;color:#eee;border:1px solid #444;border-radius:8px;font-size:14px;}
-#git-panel button{padding:9px 12px;margin:4px 4px 4px 0;background:#37373d;color:#eee;border:1px solid #555;border-radius:8px;font-size:14px;}
-#git-panel button:disabled{opacity:.5;}
-.git-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
-.git-row input{flex:1;min-width:120px;}
-#git-info,#git-changes,#git-log,#git-hint{font-size:12.5px;margin:8px 0;word-break:break-all;opacity:.92;}
-#git-msgbox{margin-top:8px;font-size:13px;white-space:pre-wrap;}
-#git-msgbox.error{color:#f48771;}
-#git-msgbox.ok{color:#89d185;}
-#git-msgbox.info{color:#9cdcfe;}
