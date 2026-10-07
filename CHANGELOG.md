@@ -2,6 +2,11 @@
 
 Semua perubahan penting pada project PawnStudio dicatat di file ini.
 
+## [1.5.4] - 2026-10-08
+
+### Added
+- Snippet callback baru: OnGameModeExit, OnPlayerDeath, OnPlayerText, OnDialogResponse, OnPlayerEnterVehicle, OnPlayerKeyStateChange.
+
 ## [1.5.3] - 2026-10-08
 
 ### Changed

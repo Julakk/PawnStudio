@@ -276,6 +276,36 @@ function getSnippetSuggestions(range) {
       insertText: "public OnGameModeInit()\n{\n\t${1}\n\treturn 1;\n}",
       doc: "Callback saat gamemode pertama kali load",
     },
+    {
+      label: "OnGameModeExit",
+      insertText: "public OnGameModeExit()\n{\n\t${1}\n\treturn 1;\n}",
+      doc: "Callback saat gamemode berhenti atau server restart",
+    },
+    {
+      label: "OnPlayerDeath",
+      insertText: "public OnPlayerDeath(playerid, killerid, reason)\n{\n\t${1}\n\treturn 1;\n}",
+      doc: "Callback saat player mati (killerid = INVALID_PLAYER_ID kalau bunuh diri atau lingkungan)",
+    },
+    {
+      label: "OnPlayerText",
+      insertText: "public OnPlayerText(playerid, text[])\n{\n\t${1}\n\treturn 1;\n}",
+      doc: "Callback saat player ngirim chat biasa (return 0 untuk blokir pesan)",
+    },
+    {
+      label: "OnDialogResponse",
+      insertText: "public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])\n{\n\t${1}\n\treturn 1;\n}",
+      doc: "Callback saat player menjawab dialog (response 1 = tombol kiri, 0 = tombol kanan)",
+    },
+    {
+      label: "OnPlayerEnterVehicle",
+      insertText: "public OnPlayerEnterVehicle(playerid, vehicleid, ispassenger)\n{\n\t${1}\n\treturn 1;\n}",
+      doc: "Callback saat player mulai masuk kendaraan",
+    },
+    {
+      label: "OnPlayerKeyStateChange",
+      insertText: "public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)\n{\n\t${1}\n\treturn 1;\n}",
+      doc: "Callback saat tombol yang ditekan player berubah",
+    },
   ];
 
   return snippets.map((s) => ({
