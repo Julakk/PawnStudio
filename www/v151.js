@@ -73,7 +73,7 @@ function buildBar(){
   [['⇥','tab'],['↶','undo'],['↷','redo'],['◀','cursorLeft'],['▶','cursorRight'],['▲','cursorUp'],['▼','cursorDown']].forEach(function(k){
     btn(k[0],function(ed){ed.trigger('v151',k[1],null);});
   });
-  ['{','}','(',')','[',']',';','"',"'",'#','<','>','=','!','&','|',',','.','@','%','+','-','*','/','\\'].forEach(function(c){
+  ['{','}','(',')','[',']',';','"',"'",'#','<','>','=','!','&','|',',','.','@','_',':','%','+','-','*','/','\\'].forEach(function(c){
     btn(c,function(ed){ed.trigger('v151','type',{text:c});});
   });
   bar.addEventListener('mousedown',function(e){e.preventDefault();});

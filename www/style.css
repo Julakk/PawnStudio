@@ -984,3 +984,9 @@ html, body {
 #symbol-bar{overflow-x:auto;touch-action:pan-x;}
 #symbol-bar button{flex:0 0 auto;min-width:38px;}
 
+
+/* v1.5.1: bar simbol lama dimatiin, diganti #v151-bar (biar gak numpuk) */
+#symbol-bar,
+#symbol-bar.hidden {
+  display: none !important;
+}
