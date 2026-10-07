@@ -64,7 +64,7 @@ APK di-build otomatis lewat GitHub Actions tiap kali push ke branch `main`. Hasi
 - [x] CI/CD build APK otomatis
 - [x] Compiler `pawncc` native + panel output
 - [x] Preflight sebelum compile (kurung seimbang, karakter nyasar)
-- [ ] Perbaikan bar simbol
+- [x] Perbaikan bar simbol
 - [ ] Manajemen file include
 - [ ] Multi-file compile
 - [ ] Folder picker native (SAF)
