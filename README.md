@@ -68,8 +68,8 @@ APK di-build otomatis lewat GitHub Actions tiap kali push ke branch `main`. Hasi
 - [x] Folder picker native (SAF)
 - [x] Auto-complete / IntelliSense untuk fungsi PAWN umum
 - [x] Custom theme & font size settings
-- [ ] Manajemen file include
-- [ ] Multi-file compile
+- [x] Include proyek otomatis terdeteksi (include/ dan pawno/include)
+- [x] Multi-file compile (include ditelusuri otomatis)
 
 ## 👤 Author
 
