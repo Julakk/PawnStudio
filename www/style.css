@@ -990,3 +990,10 @@ html, body {
 #symbol-bar.hidden {
   display: none !important;
 }
+
+/* v1.5.2: sisain ruang buat #v151-bar (fixed) biar gear & explorer gak ketutup */
+body:has(#v151-bar.show) #activity-bar,
+body:has(#v151-bar.show) #sidebar {
+  padding-bottom: 56px;
+  box-sizing: border-box;
+}
