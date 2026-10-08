@@ -1,6 +1,6 @@
 {
   "name": "pawnstudio",
-  "version": "1.5.7",
+  "version": "1.5.8",
   "description": "PawnStudio - Mobile PAWN Code Editor",
   "scripts": {
     "sync": "cap sync android",

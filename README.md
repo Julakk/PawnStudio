@@ -80,3 +80,7 @@ Bagian dari ekosistem **Ahmad Store** (hosting server game SA-MP/open.mp, FiveM,
 ## 📄 License
 
 Dirilis dengan lisensi MIT. Lihat [LICENSE.md](LICENSE.md).
+
+## Pihak ketiga
+
+- Include open.mp yang dibundel (`assets/pawno/omp`) berasal dari [openmultiplayer/omp-stdlib](https://github.com/openmultiplayer/omp-stdlib), lisensi MPL-2.0, tanpa modifikasi.

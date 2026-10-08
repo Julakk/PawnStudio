@@ -112,6 +112,7 @@ public class PawnCompilerPlugin extends Plugin {
 
     private void ensureIncludesExtracted() throws Exception {
         ensureExtraIncludesExtracted();
+        ensureOmpIncludesExtracted();
         File dir = includeDir();
         String[] assetFiles = getContext().getAssets().list("pawno/include");
         if (assetFiles == null) return;
@@ -128,6 +129,52 @@ public class PawnCompilerPlugin extends Plugin {
             byte[] data = bos.toByteArray();
 
             // Timpa kalau belum ada / ukurannya beda (APK baru bawa include baru)
+            if (outFile.exists() && outFile.length() == data.length) continue;
+            FileOutputStream output = new FileOutputStream(outFile);
+            output.write(data);
+            output.close();
+        }
+    }
+
+    // ==================================================
+    // Dukungan include open.mp (omp-stdlib, MPL-2.0)
+    // ==================================================
+    // Include open.mp butuh versi std (core, console, dst) milik open.mp. Kalau
+    // dicampur dengan std bawaan (versi lama), compile gagal "symbol already
+    // defined: print". Jadi folder pawno/omp cuma dipasang di -i kalau kode
+    // memang memakai <open.mp> / <omp_*>. Kode SA-MP klasik tidak berubah.
+    private static final java.util.regex.Pattern OMP_INCLUDE = java.util.regex.Pattern.compile(
+            "^[ \\t]*#[ \\t]*(?:try)?include[ \\t]*[<\"][ \\t]*(?:open\\.mp|_open_mp|omp_[A-Za-z0-9_]+)(?:\\.inc)?[ \\t]*[>\"]",
+            java.util.regex.Pattern.MULTILINE | java.util.regex.Pattern.CASE_INSENSITIVE);
+
+    private boolean usesOpenMp(String src) {
+        return src != null && OMP_INCLUDE.matcher(src).find();
+    }
+
+    private File ompIncludeDir() {
+        File dir = new File(getContext().getFilesDir(), "pawno/omp");
+        if (!dir.exists()) dir.mkdirs();
+        return dir;
+    }
+
+    private void ensureOmpIncludesExtracted() throws Exception {
+        String[] assetFiles = getContext().getAssets().list("pawno/omp");
+        if (assetFiles == null) return;
+        File dir = ompIncludeDir();
+
+        for (String name : assetFiles) {
+            if (!name.toLowerCase().endsWith(".inc")) continue;
+            File outFile = new File(dir, name);
+
+            InputStream input = getContext().getAssets().open("pawno/omp/" + name);
+            java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+            byte[] buffer = new byte[4096];
+            int read;
+            while ((read = input.read(buffer)) != -1) bos.write(buffer, 0, read);
+            input.close();
+            byte[] data = bos.toByteArray();
+
+            // Timpa kalau belum ada / ukurannya beda (APK baru bawa versi baru)
             if (outFile.exists() && outFile.length() == data.length) continue;
             FileOutputStream output = new FileOutputStream(outFile);
             output.write(data);
@@ -729,19 +776,31 @@ public class PawnCompilerPlugin extends Plugin {
             File outputAmx = new File(compiledOutputDir(), fileName + ".amx");
 
             java.util.List<File> mirrorDirs = buildIncludeMirror(relativeFilePath);
+            boolean ompMode = usesOpenMp(sourceCode);
 
             java.util.List<File> allRoots = new java.util.ArrayList<>();
             allRoots.addAll(mirrorDirs);
             allRoots.add(includeDir());
             allRoots.add(extraIncludeDir());
+            if (ompMode) allRoots.add(ompIncludeDir());
 
             java.util.List<String> cmdArgs = new java.util.ArrayList<>();
             cmdArgs.add(binFile.getAbsolutePath());
             cmdArgs.add(sourceFile.getAbsolutePath());
             cmdArgs.add("-o" + outputAmx.getAbsolutePath());
-            cmdArgs.add("-i" + includeDir().getAbsolutePath());
-            for (File extraIncludeDir : mirrorDirs) {
-                cmdArgs.add("-i" + extraIncludeDir.getAbsolutePath());
+            if (ompMode) {
+                // open.mp: include project dulu (kalau user bawa versi sendiri),
+                // lalu std open.mp, baru include bawaan klasik.
+                for (File extraIncludeDir : mirrorDirs) {
+                    cmdArgs.add("-i" + extraIncludeDir.getAbsolutePath());
+                }
+                cmdArgs.add("-i" + ompIncludeDir().getAbsolutePath());
+                cmdArgs.add("-i" + includeDir().getAbsolutePath());
+            } else {
+                cmdArgs.add("-i" + includeDir().getAbsolutePath());
+                for (File extraIncludeDir : mirrorDirs) {
+                    cmdArgs.add("-i" + extraIncludeDir.getAbsolutePath());
+                }
             }
             // Paling akhir: include bawaan cadangan (kalah prioritas sama project)
             cmdArgs.add("-i" + extraIncludeDir().getAbsolutePath());
@@ -758,6 +817,7 @@ public class PawnCompilerPlugin extends Plugin {
             java.util.Set<File> trustedDirs = new java.util.HashSet<>();
             trustedDirs.add(includeDir());
             trustedDirs.add(extraIncludeDir());
+            if (ompMode) trustedDirs.add(ompIncludeDir());
             int preFixed = preScanAndFix(sourceCode, relativeFilePath, allRoots, trustedDirs);
             if (preFixed > 0) autoFixed.add("(" + preFixed + " path dibenerin lewat pre-scan sebelum compile)");
 
