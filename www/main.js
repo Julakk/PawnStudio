@@ -50,6 +50,7 @@ window.MonacoEnvironment = {
 require(["vs/editor/editor.main"], async function () {
   registerPawnLanguage();
   registerPawnCompletion();
+  if (typeof registerPawnExtras === "function") registerPawnExtras();
   await FileManager.init();
   initEditor();
   await renderFileTree();
@@ -942,7 +943,7 @@ function clearErrorHighlight() {
 
 const SETTINGS_KEY = "pawnstudio_settings";
 const SETTINGS_VERSION = 2;
-const APP_VERSION = "1.5.8";
+const APP_VERSION = "1.5.9";
 
 function loadSettings() {
   const raw = localStorage.getItem(SETTINGS_KEY);
