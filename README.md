@@ -4,6 +4,13 @@ Mobile code editor untuk bahasa **PAWN**, dibangun khusus buat komunitas SA-MP /
 
 Dibangun pakai HTML, CSS, dan JavaScript murni, dibungkus jadi APK Android lewat [Capacitor](https://capacitorjs.com/).
 
+## 📱 Tampilan
+
+<p>
+  <img src="docs/compile.jpg" width="260" alt="Editor dan hasil compile">
+  <img src="docs/explorer.jpg" width="260" alt="Explorer">
+</p>
+
 ## ✨ Fitur
 
 - **Monaco Editor**: engine editor yang sama kayak dipakai VS Code
