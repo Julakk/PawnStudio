@@ -11,6 +11,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(FolderPickerPlugin.class);
         registerPlugin(NativeStoragePlugin.class);
         registerPlugin(BulkImportPlugin.class);
+        registerPlugin(NodeRunnerPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

@@ -8,3 +8,9 @@ android/local.properties
 pawnstudio-release.keystore
 *.keystore
 *.bak
+
+# runtime Node.js dibuat otomatis oleh CI
+android/app/src/main/jniLibs/arm64-v8a/libnode.so
+android/app/src/main/jniLibs/arm64-v8a/libnodeexec.so
+android/app/src/main/jniLibs/arm64-v8a/libc++_shared.so
+nodebuild/
