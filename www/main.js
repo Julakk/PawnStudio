@@ -22,6 +22,7 @@ function isBinaryFile(name) {
 }
 
 function getFileIcon(name) {
+  if (window.psFileIcon) return window.psFileIcon(name);
   const ext = getFileExt(name);
   if (BINARY_EXTS.has(ext)) return ICON_BINARY;
   if (CODE_EXTS.has(ext)) return ICON_CODE;
@@ -400,7 +401,7 @@ function renderNode(node, container) {
         const folderEl = document.createElement("div");
         folderEl.className = "folder-item";
         folderEl.innerHTML = `
-          <span class="icon">${ICON_FOLDER}</span>
+          <span class="icon">${window.psFolderIcon ? window.psFolderIcon(child.name) : ICON_FOLDER}</span>
           <span class="entry-name">${escapeHtml(child.name)}</span>
           <span class="item-actions">
             <button class="btn-rename">${ICON_RENAME}</button>
