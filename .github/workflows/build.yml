@@ -39,6 +39,22 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x android/gradlew
 
+      - name: Siapkan runtime Node.js (arm64-v8a)
+        run: |
+          NODE_MOBILE_VERSION=v18.20.4
+          NDK="${ANDROID_NDK_LATEST_HOME:-${ANDROID_NDK_ROOT:-$ANDROID_NDK_HOME}}"
+          TOOLS="$NDK/toolchains/llvm/prebuilt/linux-x86_64"
+          JNI=android/app/src/main/jniLibs/arm64-v8a
+          echo "NDK: $NDK"
+          mkdir -p "$JNI" nodebuild
+          curl -fsSL -o nodebuild/nm.zip "https://github.com/nodejs-mobile/nodejs-mobile/releases/download/${NODE_MOBILE_VERSION}/nodejs-mobile-${NODE_MOBILE_VERSION}-android.zip"
+          unzip -q -o nodebuild/nm.zip "bin/arm64-v8a/libnode.so" -d nodebuild
+          cp nodebuild/bin/arm64-v8a/libnode.so "$JNI/libnode.so"
+          "$TOOLS/bin/llvm-strip" --strip-unneeded "$JNI/libnode.so"
+          cp "$TOOLS/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so" "$JNI/libc++_shared.so"
+          "$TOOLS/bin/aarch64-linux-android26-clang" -O2 -o "$JNI/libnodeexec.so" android/native/nodeexec.c -ldl
+          ls -la "$JNI"
+
       - name: Build debug APK
         run: cd android && ./gradlew assembleDebug
 
