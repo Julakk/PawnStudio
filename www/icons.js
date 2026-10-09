@@ -67,7 +67,8 @@
   addE('exe', '#5c9ee6', 'gear');
   addE('bat sh', '#8bc34a', 'term');
   addE('cfg ini conf', '#ffa726', 'gear');
-  addE('json js', '#fbc02d', 'code');
+  addE('json js mjs cjs', '#fbc02d', 'code');
+  addE('ts', '#42a5f5', 'code');
   addE('css', '#42a5f5', 'code');
   addE('html', '#ef6c3e', 'code');
   addE('md txt', '#90a4ae', 'lines');

@@ -52,6 +52,7 @@ require(["vs/editor/editor.main"], async function () {
   registerPawnLanguage();
   registerPawnCompletion();
   if (typeof registerPawnExtras === "function") registerPawnExtras();
+  if (typeof registerNodeSupport === "function") registerNodeSupport();
   await FileManager.init();
   initEditor();
   await renderFileTree();
@@ -104,7 +105,8 @@ function initEditor() {
 
 function getLanguageForFile(filename) {
   if (filename.endsWith(".pwn") || filename.endsWith(".inc")) return "pawn";
-  if (filename.endsWith(".js")) return "javascript";
+  if (/\.(js|mjs|cjs)$/.test(filename)) return "javascript";
+  if (filename.endsWith(".ts")) return "typescript";
   if (filename.endsWith(".json")) return "json";
   if (filename.endsWith(".css")) return "css";
   if (filename.endsWith(".html")) return "html";
@@ -734,6 +736,7 @@ function closeSidebarOnMobile() {
 let errorLineDecorations = [];
 
 function runCompiler() {
+  if (window.psNodeRunGuard && window.psNodeRunGuard(activeTabPath)) return;
   if (!activeTabPath) {
     alert("Buka file dulu sebelum Run.");
     return;
