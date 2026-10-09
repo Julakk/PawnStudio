@@ -16,6 +16,7 @@ Dibangun pakai HTML, CSS, dan JavaScript murni, dibungkus jadi APK Android lewat
 - **Monaco Editor**: engine editor yang sama kayak dipakai VS Code
 - **Syntax highlighting PAWN**: keyword, string, comment, angka, dan function call punya warna sendiri
 - **File Explorer**: bikin, buka, dan hapus file/folder langsung dari sidebar
+- **Icon folder & file berwarna**: gamemodes, plugins, scriptfiles, .pwn, .inc, .dll, dan lainnya mudah dikenali sekilas
 - **Multi-tab**: buka beberapa file `.pwn` sekaligus, ada indikator unsaved changes
 - **Compile langsung di HP**: pakai `pawncc` native (arm64-v8a), hasilnya tampil di panel output
 - **Auto build APK**: tiap push ke `main`, GitHub Actions otomatis build APK dan bikin Release

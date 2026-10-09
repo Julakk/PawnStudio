@@ -1,4 +1,19 @@
 .file-item .icon svg, .folder-item .icon svg { width: 18px; height: 18px; }
-.file-item.file-binary { opacity: .7; }
+.file-item.file-binary { opacity: .85; }
 .file-item.file-binary.active { opacity: 1; }
 .tab-item .tab-icon svg { width: 16px; height: 16px; }
+
+/* Rename/Hapus cuma muncul di file aktif atau item yang diketuk tombol ... */
+.file-item .item-actions .btn-rename,
+.file-item .item-actions .btn-delete,
+.folder-item .item-actions .btn-rename,
+.folder-item .item-actions .btn-delete { display: none; }
+.file-item.active .item-actions .btn-rename,
+.file-item.active .item-actions .btn-delete,
+.file-item.show-actions .item-actions .btn-rename,
+.file-item.show-actions .item-actions .btn-delete,
+.folder-item.show-actions .item-actions .btn-rename,
+.folder-item.show-actions .item-actions .btn-delete { display: flex; }
+.item-actions .btn-more { padding: 4px 6px; }
+.file-item.show-actions .btn-more,
+.folder-item.show-actions .btn-more { color: #fff; opacity: 1; }

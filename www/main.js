@@ -403,7 +403,7 @@ function renderNode(node, container) {
         folderEl.innerHTML = `
           <span class="icon">${window.psFolderIcon ? window.psFolderIcon(child.name) : ICON_FOLDER}</span>
           <span class="entry-name">${escapeHtml(child.name)}</span>
-          <span class="item-actions">
+          <span class="item-actions"><button class="btn-more"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
             <button class="btn-rename">${ICON_RENAME}</button>
             <button class="btn-delete">${ICON_TRASH}</button>
           </span>
@@ -475,7 +475,7 @@ function renderNode(node, container) {
         fileEl.innerHTML = `
           <span class="icon">${getFileIcon(child.name)}</span>
           <span class="entry-name">${escapeHtml(child.name)}</span>
-          <span class="item-actions">
+          <span class="item-actions"><button class="btn-more"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
             <button class="btn-rename">${ICON_RENAME}</button>
             <button class="btn-delete">${ICON_TRASH}</button>
           </span>
@@ -944,7 +944,7 @@ function clearErrorHighlight() {
 
 const SETTINGS_KEY = "pawnstudio_settings";
 const SETTINGS_VERSION = 2;
-const APP_VERSION = "1.5.9";
+const APP_VERSION = "1.6.0";
 
 function loadSettings() {
   const raw = localStorage.getItem(SETTINGS_KEY);
