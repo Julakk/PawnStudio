@@ -1,7 +1,8 @@
-// PawnStudio - jalanin Node.js di dalam app (lewat plugin native NodeRunner)
+// PawnStudio - jalanin Node.js dan npm di dalam app (lewat plugin native NodeRunner)
 (function () {
-  var running = false, outH = null, exitH = null, buf = '', flushT = null, runBtn = null, runIcon = '';
+  var running = false, kind = 'node', outH = null, exitH = null, buf = '', flushT = null, runBtn = null, runIcon = '';
   var MAX_LINES = 3000;
+  var NPM_CMDS = ['install', 'i', 'add', 'uninstall', 'remove', 'rm', 'update', 'ls', 'list', 'init'];
   var STOP_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>';
 
   function plug() { return window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.NodeRunner; }
@@ -23,7 +24,11 @@
     while (b.children.length > MAX_LINES) b.removeChild(b.firstChild);
     b.scrollTop = b.scrollHeight;
   }
-  function lineType(t) { return /\b(\w*Error|Uncaught|ENOENT|EADDRINUSE|ECONNREFUSED)\b/.test(t) ? 'error' : 'plain'; }
+  function lineType(t) {
+    if (/^npm (ERR!|error)/.test(t) || /\b(\w*Error|Uncaught|ENOENT|EADDRINUSE|ECONNREFUSED)\b/.test(t)) return 'error';
+    if (/^npm (WARN|warn)/.test(t)) return 'warning';
+    return 'plain';
+  }
 
   function flush() { if (buf) { addLine(buf, lineType(buf)); buf = ''; } }
   function pushText(t) {
@@ -56,56 +61,94 @@
     cleanup();
     setRunning(false);
     var secs = ((ev.durationMs || 0) / 1000).toFixed(1);
+    var name = kind === 'npm' ? 'npm' : 'Node';
     if (ev.stopped) {
       addLine('[Dihentikan]', 'info');
       setStatus('idle', '● Siap');
     } else if (ev.exitCode === 0) {
       addLine('[Selesai, kode 0, ' + secs + 's]', 'success');
-      setStatus('success', '✓ Node selesai (' + secs + 's)');
+      setStatus('success', '✓ ' + name + ' OK (' + secs + 's)');
     } else {
       if (ev.exitCode === 127) addLine('Runtime Node.js gagal dimuat (cek libnode.so di APK).', 'error');
       addLine('[Keluar dengan kode ' + ev.exitCode + ', ' + secs + 's]', 'error');
-      setStatus('fail', '✕ Node kode ' + ev.exitCode);
+      setStatus('fail', '✕ ' + name + ' kode ' + ev.exitCode);
+    }
+    // npm bisa bikin package.json / node_modules, muat ulang Explorer
+    if (kind === 'npm' && typeof renderFileTree === 'function') {
+      try { renderFileTree(); } catch (e) {}
     }
   }
 
   function notAvailable(reason) {
     showOutputPanel();
     setOutputLines([
-      { text: 'Node.js tidak bisa dijalankan: ' + reason + '.', type: 'error' },
+      { text: 'Tidak bisa dijalankan: ' + reason + '.', type: 'error' },
       { text: 'Pastikan APK dibuild dengan runtime Node.js (versi 1.7.0 ke atas).', type: 'info' }
     ]);
   }
 
-  async function start(path) {
+  // Satu pintu untuk Run file Node maupun npm. invoke(plugin) memanggil run/npm di native.
+  async function launch(k, label, needNpm, invoke) {
     var p = plug();
     if (!p) { notAvailable('plugin NodeRunner tidak ditemukan (jalankan sebagai APK, bukan browser)'); return; }
     try { if (typeof saveActiveTab === 'function') await saveActiveTab(); } catch (e) {}
     var st;
     try { st = await p.status(); } catch (e) { st = { available: false }; }
     if (!st || !st.available) { notAvailable('APK ini dibuild tanpa runtime Node.js'); return; }
+    if (needNpm && !st.npm) {
+      showOutputPanel();
+      setOutputLines([
+        { text: 'npm tidak ada di APK ini.', type: 'error' },
+        { text: 'Pastikan APK dibuild dengan npm (versi 1.8.0 ke atas).', type: 'info' }
+      ]);
+      return;
+    }
 
+    kind = k;
     showOutputPanel();
-    setOutputLines([{ text: '$ node ' + path, type: 'info' }]);
+    setOutputLines([{ text: '$ ' + label, type: 'info' }]);
     buf = '';
-    setStatus('running', '⟳ Node: jalan');
+    setStatus('running', '⟳ ' + (k === 'npm' ? 'npm' : 'Node'));
     try {
       outH = await p.addListener('output', function (ev) { pushText((ev && ev.text) || ''); });
       exitH = await p.addListener('exit', handleExit);
       setRunning(true);
-      await p.run({ path: path });
+      await invoke(p);
     } catch (e) {
       cleanup();
       setRunning(false);
       addLine('Gagal menjalankan: ' + (e && e.message ? e.message : e), 'error');
-      setStatus('fail', '✕ Node gagal');
+      setStatus('fail', '✕ ' + (k === 'npm' ? 'npm' : 'Node') + ' gagal');
     }
+  }
+
+  function startNode(path) {
+    return launch('node', 'node ' + path, false, function (p) { return p.run({ path: path }); });
+  }
+
+  function startNpm(args) {
+    return launch('npm', 'npm ' + args.join(' '), true, function (p) { return p.npm({ args: args }); });
   }
 
   async function stop() {
     var p = plug();
     try { if (p) await p.stop(); } catch (e) {}
   }
+
+  // Tombol npm di Explorer: ketik perintah, contoh "install discord.js"
+  window.psNpmPrompt = function () {
+    if (running) { alert('Masih ada proses yang berjalan. Hentikan dulu (tombol Stop).'); return; }
+    var s = prompt('npm (contoh: install discord.js  |  uninstall express  |  ls)', 'install ');
+    if (s == null) return;
+    var args = s.trim().split(/\s+/).filter(Boolean);
+    if (args[0] === 'npm') args.shift();
+    if (!args.length) return;
+    if (NPM_CMDS.indexOf(args[0]) < 0) {
+      alert('Perintah npm tidak didukung: ' + args[0] + '\nYang didukung: ' + NPM_CMDS.join(', '));
+      return;
+    }
+    startNpm(args);
+  };
 
   // Dipanggil dari runCompiler() di main.js sebelum compile PAWN
   window.psNodeRunGuard = function (path) {
@@ -119,7 +162,14 @@
     }
     if (!isNodeFile(path)) return false;
     if (running) { stop(); return true; }
-    start(path);
+    startNode(path);
     return true;
   };
+
+  function bindNpmButton() {
+    var b = document.getElementById('btn-npm');
+    if (b) b.addEventListener('click', function () { window.psNpmPrompt(); });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindNpmButton);
+  else bindNpmButton();
 })();

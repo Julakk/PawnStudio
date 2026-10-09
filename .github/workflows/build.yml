@@ -55,6 +55,15 @@ jobs:
           "$TOOLS/bin/aarch64-linux-android26-clang" -O2 -o "$JNI/libnodeexec.so" android/native/nodeexec.c -ldl
           ls -la "$JNI"
 
+      - name: Siapkan npm untuk app
+        run: |
+          mkdir -p nodebuild/npm android/app/src/main/assets/node
+          cd nodebuild/npm
+          npm pack npm@10.8.3 --silent
+          tar xzf npm-10.8.3.tgz
+          (cd package && zip -qr -9 ../../../android/app/src/main/assets/node/npm.zip .)
+          ls -la ../../android/app/src/main/assets/node
+
       - name: Build debug APK
         run: cd android && ./gradlew assembleDebug
 

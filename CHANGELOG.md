@@ -2,6 +2,21 @@
 
 Semua perubahan penting pada project PawnStudio dicatat di file ini.
 
+## [1.8.0] - 2026-10-10
+
+### Added
+- npm di dalam app. Tombol npm di header Explorer: ketik perintah, contoh `install discord.js`, `uninstall express`, `ls`, `init`. npm 10 (JavaScript murni) dibundel di APK dan dijalankan lewat runtime Node.js yang sama, jadi tidak perlu Termux. Paket masuk ke node_modules di folder project aktif dan langsung bisa di-require dari file .js. Explorer dimuat ulang otomatis setelah npm selesai.
+- package.json dibuat otomatis kalau belum ada, supaya paket tidak terpasang di folder induk.
+- Workflow build.yml membundel npm ke assets APK saat build.
+
+### Changed
+- Perintah npm dibatasi: install, i, add, uninstall, remove, rm, update, ls, list, init. Nama paket hanya dari registry npm (tanpa URL atau path). Script lifecycle (preinstall/postinstall) dimatikan dan symlink .bin tidak dibuat, karena Android tidak punya /bin/sh dan penyimpanan eksternal tidak mendukung symlink.
+- Label status bar untuk Node/npm dipersingkat (contoh: "✓ Node OK (0.7s)") supaya tidak memotong nama file dan bahasa.
+
+### Known Issues
+- Paket yang butuh kompilasi native (node-gyp) tidak bisa dipasang. Paket JavaScript murni seperti discord.js dan express adalah target utamanya.
+- Butuh internet saat npm install. Belum diuji di perangkat.
+
 ## [1.7.0] - 2026-10-09
 
 ### Added
