@@ -17,3 +17,8 @@
 .item-actions .btn-more { padding: 4px 6px; }
 .file-item.show-actions .btn-more,
 .folder-item.show-actions .btn-more { color: #fff; opacity: 1; }
+
+/* Header Explorer: 5 tombol (termasuk npm) harus muat */
+#sidebar-header { padding: 0 6px 0 10px; }
+#sidebar-actions { gap: 4px; }
+#sidebar-actions button { width: 28px; height: 28px; }

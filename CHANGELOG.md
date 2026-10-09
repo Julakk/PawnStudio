@@ -12,6 +12,7 @@ Semua perubahan penting pada project PawnStudio dicatat di file ini.
 ### Changed
 - Perintah npm dibatasi: install, i, add, uninstall, remove, rm, update, ls, list, init. Nama paket hanya dari registry npm (tanpa URL atau path). Script lifecycle (preinstall/postinstall) dimatikan dan symlink .bin tidak dibuat, karena Android tidak punya /bin/sh dan penyimpanan eksternal tidak mendukung symlink.
 - Label status bar untuk Node/npm dipersingkat (contoh: "✓ Node OK (0.7s)") supaya tidak memotong nama file dan bahasa.
+- Tombol di header Explorer diperkecil sedikit supaya kelima tombol (termasuk npm) muat.
 
 ### Known Issues
 - Paket yang butuh kompilasi native (node-gyp) tidak bisa dipasang. Paket JavaScript murni seperti discord.js dan express adalah target utamanya.
