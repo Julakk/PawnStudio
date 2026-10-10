@@ -84,7 +84,7 @@
       try {
         txt = await readAny(resolve(base, ref));
         var st = doc.createElement('style');
-        st.textContent = txt;
+        st.textContent = txt.replace(/<\/style/gi, "<\\/style");
         el.replaceWith(st);
       } catch (e) { warns.push('CSS tidak ditemukan: ' + ref); }
     }
