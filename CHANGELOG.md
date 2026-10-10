@@ -9,6 +9,10 @@ Semua perubahan penting pada project PawnStudio dicatat di file ini.
 - `console.log`, `console.warn`, `console.error`, dan error JavaScript dari preview tampil di panel Output (bisa disalin dengan tombol Salin).
 - Preview dimuat ulang otomatis setiap file disimpan, atau lewat tombol "Muat ulang".
 - Ekstensi `.htm` dikenali sebagai HTML.
+- Tombol ▶ pada file `.js`, `.pwn`, dan file lain tetap menjalankan Node atau compiler seperti sebelumnya. Hanya file `.html` yang diarahkan ke preview.
+
+### Fixed
+- CSS yang berisi teks `</style>` di dalam string tidak lagi memotong blok style saat preview.
 
 ### Catatan
 - Preview berjalan di iframe sandbox tanpa akses ke file maupun plugin aplikasi, sehingga `localStorage` dan `fetch` ke file lokal tidak tersedia di dalam preview.
