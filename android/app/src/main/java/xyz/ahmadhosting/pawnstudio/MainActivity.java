@@ -10,6 +10,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(PawnCompilerPlugin.class);
         registerPlugin(FolderPickerPlugin.class);
         registerPlugin(NativeStoragePlugin.class);
+        registerPlugin(GitPlugin.class);
         registerPlugin(BulkImportPlugin.class);
         registerPlugin(NodeRunnerPlugin.class);
         super.onCreate(savedInstanceState);
