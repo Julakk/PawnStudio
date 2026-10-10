@@ -2,6 +2,12 @@
 
 Semua perubahan penting pada project PawnStudio dicatat di file ini.
 
+## [1.8.3] - 2026-10-10
+
+### Fixed
+- Error Node.js yang tidak tertangkap (misalnya modul tidak ditemukan, atau promise ditolak tanpa catch) sekarang tampil di panel Output. Sebelumnya prosesnya keluar dengan kode 1 tanpa pesan apa pun.
+- Pesan stderr (console.error) tidak lagi hilang kalau stderr tidak tersambung ke panel Output.
+
 ## [1.8.2] - 2026-10-10
 
 ### Fixed
