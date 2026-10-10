@@ -2,6 +2,11 @@
 
 Semua perubahan penting pada project PawnStudio dicatat di file ini.
 
+## [1.8.7] - 2026-10-10
+
+### Fixed
+- Modul native (file `.node`, misalnya `@napi-rs/canvas`) yang berada di storage bersama (`/storage/emulated/0/...`) sekarang bisa dimuat. Android menolak `dlopen` dari lokasi itu, jadi file `.node` otomatis disalin sekali ke folder internal app lalu dimuat dari sana.
+
 ## [1.8.6] - 2026-10-10
 
 ### Fixed

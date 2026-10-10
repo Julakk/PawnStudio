@@ -1,3 +1,30 @@
+// PS_NATIVE_COPY v1.8.7
+// Android menolak dlopen dari storage bersama; salin .node ke folder internal app dulu.
+(function () {
+  try {
+    var fs = require('fs'), path = require('path'), crypto = require('crypto');
+    var origDlopen = process.dlopen;
+    var cacheDir = path.join(process.env.HOME || '/data/local/tmp', '.ps-native');
+    process.dlopen = function (module, filename) {
+      var args = Array.prototype.slice.call(arguments);
+      try {
+        if (typeof filename === 'string' && /^\/(storage|sdcard)\//.test(filename)) {
+          fs.mkdirSync(cacheDir, { recursive: true });
+          var st = fs.statSync(filename);
+          var key = crypto.createHash('md5')
+            .update(filename + ':' + st.size + ':' + st.mtimeMs).digest('hex').slice(0, 10);
+          var dest = path.join(cacheDir, key + '-' + path.basename(filename));
+          if (!fs.existsSync(dest)) {
+            fs.copyFileSync(filename, dest + '.tmp');
+            fs.renameSync(dest + '.tmp', dest);
+          }
+          args[1] = dest;
+        }
+      } catch (e) { /* kalau gagal salin, biarkan jalur asli */ }
+      return origDlopen.apply(this, args);
+    };
+  } catch (e) { /* jangan sampai preload ikut crash */ }
+})();
 // PS_REGEX_COMPAT v1.8.6
 // Node di APK tanpa ICU: semua \p{...} diganti range Unicode setara sebelum modul dikompilasi.
 (function () {
