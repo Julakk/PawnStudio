@@ -1,34 +1,72 @@
-// PS_REGEX_COMPAT v1.8.4
-// Node di APK gak support \p{sc=...}; ganti jadi range Unicode sebelum modul dikompilasi.
+// PS_REGEX_COMPAT v1.8.6
+// Node di APK tanpa ICU: semua \p{...} diganti range Unicode setara sebelum modul dikompilasi.
 (function () {
   try {
     var M = require('module');
     var orig = M.prototype._compile;
-    var MAP = [
-      ['\\p{sc=Deva}', '\\u0900-\\u097F'],
-      ['\\p{sc=Devanagari}', '\\u0900-\\u097F'],
-      ['\\p{sc=Thai}', '\\u0E00-\\u0E7F'],
-      ['\\p{Script=Deva}', '\\u0900-\\u097F'],
-      ['\\p{Script=Devanagari}', '\\u0900-\\u097F'],
-      ['\\p{Script=Thai}', '\\u0E00-\\u0E7F']
-    ];
-    // PS_REGEX_COMPAT_2: runtime tanpa ICU gak kenal \p{...} sama sekali
-    var LETTER = 'A-Za-z\\u00AA\\u00B5\\u00BA\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u02C1\\u0370-\\u1FFF\\u2C00-\\uD7FF\\uF900-\\uFDFF\\uFE70-\\uFEFC\\u{10000}-\\u{10FFFF}';
-    var NUMBER = '0-9\\u00B2\\u00B3\\u00B9\\u00BC-\\u00BE\\u0660-\\u0669\\u06F0-\\u06F9\\u0966-\\u096F\\u0E50-\\u0E59\\uFF10-\\uFF19';
-    MAP.push(
-      ['\\p{Letter}', LETTER],
-      ['\\p{L}', LETTER],
-      ['\\p{Number}', NUMBER],
-      ['\\p{N}', NUMBER]
-    );
-    M.prototype._compile = function (content, filename) {
-      if (typeof content === 'string' &&
-          content.indexOf('\\p{') !== -1) {
-        for (var i = 0; i < MAP.length; i++) {
-          content = content.split(MAP[i][0]).join(MAP[i][1]);
+
+    var LU = 'A-Z\\u00C0-\\u00D6\\u00D8-\\u00DE\\u0391-\\u03A1\\u03A3-\\u03A9\\u0410-\\u042F';
+    var LL = 'a-z\\u00B5\\u00DF-\\u00F6\\u00F8-\\u00FF\\u03B1-\\u03C9\\u0430-\\u044F';
+    var LT = '\\u01C5\\u01C8\\u01CB\\u01F2';
+    var LM = '\\u02B0-\\u02C1\\u02C6-\\u02D1\\u3005\\u3031-\\u3035\\u309D\\u309E\\u30FC-\\u30FE';
+    var LO = '\\u00AA\\u00BA\\u01BB\\u05D0-\\u05EA\\u0620-\\u063F\\u0641-\\u064A\\u0904-\\u0939\\u0E01-\\u0E30\\u3041-\\u3096\\u30A1-\\u30FA\\u3400-\\u9FFF\\uAC00-\\uD7A3';
+    var LETTER = LU + LL + LT + LM + LO + '\\u0100-\\u02AF\\u0370-\\u03FF\\u0400-\\u052F\\u0531-\\u0587\\u0E81-\\u0EDF\\u1E00-\\u1FFF\\uF900-\\uFAFF\\uFF21-\\uFF3A\\uFF41-\\uFF5A\\u{10000}-\\u{10FFFF}';
+    var ND = '0-9\\u0660-\\u0669\\u06F0-\\u06F9\\u0966-\\u096F\\u0E50-\\u0E59\\uFF10-\\uFF19';
+    var NL = '\\u16EE-\\u16F0\\u2160-\\u2182\\u3007';
+    var NO = '\\u00B2\\u00B3\\u00B9\\u00BC-\\u00BE';
+    var NUMBER = ND + NL + NO;
+    var MARK = '\\u0300-\\u036F\\u0483-\\u0489\\u0591-\\u05BD\\u064B-\\u065F\\u0900-\\u0903\\u093A-\\u094F\\u0E31\\u0E34-\\u0E3A\\u0E47-\\u0E4E';
+    var DEVA = '\\u0900-\\u097F';
+    var THAI = '\\u0E00-\\u0E7F';
+
+    var PROPS = {};
+    function add(names, val) { for (var i = 0; i < names.length; i++) PROPS[names[i]] = val; }
+    add(['L', 'Letter'], LETTER);
+    add(['Lu', 'Uppercase_Letter'], LU);
+    add(['Ll', 'Lowercase_Letter'], LL);
+    add(['Lt', 'Titlecase_Letter'], LT);
+    add(['Lm', 'Modifier_Letter'], LM);
+    add(['Lo', 'Other_Letter'], LO);
+    add(['N', 'Number'], NUMBER);
+    add(['Nd', 'Decimal_Number'], ND);
+    add(['Nl', 'Letter_Number'], NL);
+    add(['No', 'Other_Number'], NO);
+    add(['M', 'Mark', 'Mn', 'Mc', 'Me', 'Nonspacing_Mark', 'Spacing_Mark'], MARK);
+    add(['sc=Deva', 'sc=Devanagari', 'scx=Deva', 'Script=Deva', 'Script=Devanagari', 'Script_Extensions=Deva'], DEVA);
+    add(['sc=Thai', 'scx=Thai', 'Script=Thai', 'Script_Extensions=Thai'], THAI);
+
+    function transform(src) {
+      var out = '', i = 0, n = src.length, inCls = false;
+      while (i < n) {
+        var c = src[i];
+        if (c === '\n') { inCls = false; out += c; i++; continue; }
+        if (c === '\\') {
+          var nx = src[i + 1];
+          if (nx === 'p' && src[i + 2] === '{') {
+            var j = src.indexOf('}', i + 3);
+            if (j > 0 && j - i < 64) {
+              var name = src.slice(i + 3, j).replace(/^(General_Category|gc)=/, '');
+              var r = PROPS[name];
+              if (r) { out += inCls ? r : '[' + r + ']'; i = j + 1; continue; }
+            }
+          }
+          out += c + (nx === undefined ? '' : nx);
+          i += 2;
+          continue;
         }
+        if (c === '[') inCls = true; else if (c === ']') inCls = false;
+        out += c; i++;
       }
-      arguments[0] = content; return orig.apply(this, arguments);
+      return out;
+    }
+
+    M._psRegexCompat = transform;
+    M.prototype._compile = function (content, filename) {
+      if (typeof content === 'string' && content.indexOf('\\p{') !== -1) {
+        content = transform(content);
+      }
+      arguments[0] = content;
+      return orig.apply(this, arguments);
     };
   } catch (e) { /* jangan sampai preload ikut crash */ }
 })();

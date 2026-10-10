@@ -2,6 +2,11 @@
 
 Semua perubahan penting pada project PawnStudio dicatat di file ini.
 
+## [1.8.6] - 2026-10-10
+
+### Fixed
+- Bot discord.js yang memakai `@discordjs/builders` tidak lagi crash dengan `Invalid regular expression ... Invalid property name in character class`. Preload shim sekarang mengganti semua Unicode property escape (`\p{L}`, `\p{Ll}`, `\p{Lm}`, `\p{Lo}`, `\p{N}`, `\p{Nd}`, script Devanagari/Thai, dan sejenisnya) di semua modul, bukan cuma beberapa yang ketemu sebelumnya.
+
 ## [1.8.5] - 2026-10-10
 
 ### Fixed
