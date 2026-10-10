@@ -304,9 +304,6 @@ public class NodeRunnerPlugin extends Plugin {
         ProcessBuilder pb = new ProcessBuilder(cmd);
         Map<String, String> env = pb.environment();
         env.put("LD_LIBRARY_PATH", nativeLibDir());
-        // PS_PRELOAD_NODE: jadikan libnode.so global supaya addon native (.node) bisa menemukan simbol napi_*
-        File psLibNode = new File(nativeLibDir(), "libnode.so");
-        if (psLibNode.exists()) env.put("LD_PRELOAD", psLibNode.getAbsolutePath());
         env.put("HOME", home.getAbsolutePath());
         env.put("TMPDIR", tmp.getAbsolutePath());
         if (extraEnv != null) env.putAll(extraEnv);

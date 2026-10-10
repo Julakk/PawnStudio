@@ -2,11 +2,6 @@
 
 Semua perubahan penting pada project PawnStudio dicatat di file ini.
 
-## [1.8.9] - 2026-10-10
-
-### Fixed
-- Addon native Node (misalnya `@napi-rs/canvas`) gagal dimuat dengan `cannot locate symbol "napi_unwrap"`. `libnode.so` sekarang di-preload secara global saat Node diluncurkan, sehingga addon bisa menemukan simbol Node-API.
-
 ## [1.8.8] - 2026-10-10
 
 ### Fixed
