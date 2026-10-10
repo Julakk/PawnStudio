@@ -2,6 +2,11 @@
 
 Semua perubahan penting pada project PawnStudio dicatat di file ini.
 
+## [1.8.4] - 2026-10-10
+
+### Fixed
+- Bot discord.js tidak lagi crash dengan `SyntaxError: Invalid regular expression ... Invalid property name in character class` saat memuat `discord-api-types`. Runtime Node di APK tidak mendukung Unicode script property `\p{sc=Deva}` dan `\p{sc=Thai}`, jadi regex itu otomatis diganti ke range Unicode setara sebelum modul dikompilasi (lewat preload shim).
+
 ## [1.8.3] - 2026-10-10
 
 ### Fixed

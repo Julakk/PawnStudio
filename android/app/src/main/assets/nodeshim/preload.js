@@ -1,3 +1,28 @@
+// PS_REGEX_COMPAT v1.8.4
+// Node di APK gak support \p{sc=...}; ganti jadi range Unicode sebelum modul dikompilasi.
+(function () {
+  try {
+    var M = require('module');
+    var orig = M.prototype._compile;
+    var MAP = [
+      ['\\p{sc=Deva}', '\\u0900-\\u097F'],
+      ['\\p{sc=Devanagari}', '\\u0900-\\u097F'],
+      ['\\p{sc=Thai}', '\\u0E00-\\u0E7F'],
+      ['\\p{Script=Deva}', '\\u0900-\\u097F'],
+      ['\\p{Script=Devanagari}', '\\u0900-\\u097F'],
+      ['\\p{Script=Thai}', '\\u0E00-\\u0E7F']
+    ];
+    M.prototype._compile = function (content, filename) {
+      if (typeof content === 'string' &&
+          (content.indexOf('\\p{sc=') !== -1 || content.indexOf('\\p{Script=') !== -1)) {
+        for (var i = 0; i < MAP.length; i++) {
+          content = content.split(MAP[i][0]).join(MAP[i][1]);
+        }
+      }
+      return orig.call(this, content, filename);
+    };
+  } catch (e) { /* jangan sampai preload ikut crash */ }
+})();
 // PawnStudio - shim diagnostik Node.js (di-preload ke setiap script)
 (function () {
   var out = process.stdout;
