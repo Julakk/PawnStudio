@@ -5,10 +5,11 @@ Semua perubahan penting pada project PawnStudio dicatat di file ini.
 ## [1.9.0] - 2026-10-10
 
 ### Added
-- Tombol "Salin" di header panel Output untuk menyalin seluruh isi output sekaligus (berguna untuk menempel error ke chat).
+- Tombol "Salin" di header panel Output untuk menyalin seluruh isi output sekaligus, berguna untuk menempel error ke chat. Tombol berubah jadi "Tersalin ✓" saat berhasil. Baris lama yang sudah terbuang karena batas panel tidak ikut tersalin.
 
-### Fixed
-- Teks di panel Output sekarang bisa di-select.
+### Changed
+- Teks di panel Output dipaksa bisa di-select (`user-select: text`).
+- Nomor versi diperbarui ke 1.9.0 di Pengaturan, Pengaturan Lanjutan, `package.json`, dan `build.gradle`.
 
 ## [1.8.9] - 2026-10-10
 
