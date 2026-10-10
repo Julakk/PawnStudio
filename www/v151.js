@@ -87,6 +87,12 @@ function buildBar(){
   [['⇥','tab'],['↶','undo'],['↷','redo'],['◀','cursorLeft'],['▶','cursorRight'],['▲','cursorUp'],['▼','cursorDown']].forEach(function(k){
     btn(k[0],function(ed){ed.trigger('v151',k[1],null);});
   });
+  btn('Fmt',function(ed){
+    var a=null;try{a=ed.getAction('editor.action.formatDocument');}catch(e){}
+    var ok=false;try{ok=!!(a&&a.isSupported());}catch(e){}
+    if(!ok){toast('Format belum tersedia untuk bahasa ini');return;}
+    a.run().then(function(){toast('Kode dirapikan');},function(){toast('Format gagal');});
+  });
   ['{','}','(',')','[',']',';','"',"'",'#','<','>','=','!','&','|',',','.','@','_',':','%','+','-','*','/','\\'].forEach(function(c){
     btn(c,function(ed){ed.trigger('v151','type',{text:c});});
   });
