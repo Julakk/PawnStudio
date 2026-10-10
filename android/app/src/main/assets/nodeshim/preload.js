@@ -19,7 +19,7 @@
           content = content.split(MAP[i][0]).join(MAP[i][1]);
         }
       }
-      return orig.call(this, content, filename);
+      arguments[0] = content; return orig.apply(this, arguments);
     };
   } catch (e) { /* jangan sampai preload ikut crash */ }
 })();
