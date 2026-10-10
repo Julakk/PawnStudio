@@ -109,7 +109,7 @@ function getLanguageForFile(filename) {
   if (filename.endsWith(".ts")) return "typescript";
   if (filename.endsWith(".json")) return "json";
   if (filename.endsWith(".css")) return "css";
-  if (filename.endsWith(".html")) return "html";
+  if (/\.html?$/i.test(filename)) return "html";
   return "plaintext";
 }
 
@@ -968,7 +968,7 @@ function clearErrorHighlight() {
 
 const SETTINGS_KEY = "pawnstudio_settings";
 const SETTINGS_VERSION = 2;
-const APP_VERSION = "1.9.0";
+const APP_VERSION = "1.10.0";
 
 function loadSettings() {
   const raw = localStorage.getItem(SETTINGS_KEY);

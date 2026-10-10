@@ -2,6 +2,19 @@
 
 Semua perubahan penting pada project PawnStudio dicatat di file ini.
 
+## [1.10.0] - 2026-10-10
+
+### Added
+- Preview untuk project HTML. Buka file `.html`, lalu ketuk tombol Preview (ikon mata) atau tombol ▶. File `style.css` dan `script.js` yang di-link dengan `<link href>` dan `<script src>` otomatis digabung, dan isi editor yang belum disimpan ikut terpakai.
+- `console.log`, `console.warn`, `console.error`, dan error JavaScript dari preview tampil di panel Output (bisa disalin dengan tombol Salin).
+- Preview dimuat ulang otomatis setiap file disimpan, atau lewat tombol "Muat ulang".
+- Ekstensi `.htm` dikenali sebagai HTML.
+
+### Catatan
+- Preview berjalan di iframe sandbox tanpa akses ke file maupun plugin aplikasi, sehingga `localStorage` dan `fetch` ke file lokal tidak tersedia di dalam preview.
+- Gambar lokal belum didukung; gunakan URL online atau SVG inline.
+- Library dari internet (CDN, Google Fonts) hanya termuat kalau HP sedang online.
+
 ## [1.9.0] - 2026-10-10
 
 ### Added
