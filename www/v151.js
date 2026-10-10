@@ -108,7 +108,7 @@ function buildPanel(){
   var p=el('div');p.id='v151-panel';
   p.addEventListener('click',function(e){if(e.target===p)p.className='';});
   var sh=el('div','v151-sheet'),hd=el('div','v151-head');
-  hd.appendChild(el('span','','PENGATURAN LANJUTAN · v1.8.1'));
+  hd.appendChild(el('span','','PENGATURAN LANJUTAN · v1.8.2'));
   var x=el('button','','×');x.onclick=function(){p.className='';};
   hd.appendChild(x);sh.appendChild(hd);
   function sec(t){sh.appendChild(el('div','v151-sec',t));}
@@ -185,7 +185,7 @@ function init(){
   if(window.visualViewport)window.visualViewport.addEventListener('resize',kbCheck);
   if(S.awake)awake();
   window.PawnV151={open:open,state:function(){return S;}};
-  setTimeout(function(){if(!M())toast('v1.8.1: Monaco tidak terdeteksi');},20000);
+  setTimeout(function(){if(!M())toast('v1.8.2: Monaco tidak terdeteksi');},20000);
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();

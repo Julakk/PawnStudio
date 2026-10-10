@@ -2,7 +2,7 @@
 (function () {
   var running = false, kind = 'node', outH = null, exitH = null, buf = '', flushT = null, runBtn = null, runIcon = '';
   var MAX_LINES = 3000;
-  var gotOut = false;
+  var outLines = 0;
   var NPM_CMDS = ['install', 'i', 'add', 'uninstall', 'remove', 'rm', 'update', 'ls', 'list', 'init'];
   var STOP_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>';
 
@@ -31,13 +31,12 @@
     return 'plain';
   }
 
-  function flush() { if (buf) { addLine(buf, lineType(buf)); buf = ''; } }
+  function flush() { if (buf) { if (buf.trim()) outLines++; addLine(buf, lineType(buf)); buf = ''; } }
   function pushText(t) {
-    if (String(t).length) gotOut = true;
     buf += String(t).replace(/\r\n/g, '\n');
     var parts = buf.split('\n');
     buf = parts.pop();
-    parts.forEach(function (l) { addLine(l, lineType(l)); });
+    parts.forEach(function (l) { if (l.trim()) outLines++; addLine(l, lineType(l)); });
     clearTimeout(flushT);
     if (buf) flushT = setTimeout(flush, 200);
   }
@@ -72,6 +71,7 @@
       setStatus('success', '✓ ' + name + ' OK (' + secs + 's)');
     } else {
       if (ev.exitCode === 127) addLine('Runtime Node.js gagal dimuat (cek libnode.so di APK).', 'error');
+      if (outLines === 0 && kind === 'node' && ev.exitCode !== 127) addLine('Tidak ada output sama sekali dan bukan dari process.exit(). Kemungkinan Node crash saat memuat modul (mis. modul native).', 'info');
       addLine('[Keluar dengan kode ' + ev.exitCode + ', ' + secs + 's]', 'error');
       setStatus('fail', '✕ ' + name + ' kode ' + ev.exitCode);
     }
@@ -110,7 +110,7 @@
     showOutputPanel();
     setOutputLines([{ text: '$ ' + label, type: 'info' }]);
     buf = '';
-    gotOut = false;
+    outLines = 0;
     setStatus('running', '⟳ ' + (k === 'npm' ? 'npm' : 'Node'));
     try {
       outH = await p.addListener('output', function (ev) { pushText((ev && ev.text) || ''); });

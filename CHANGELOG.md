@@ -2,6 +2,11 @@
 
 Semua perubahan penting pada project PawnStudio dicatat di file ini.
 
+## [1.8.2] - 2026-10-10
+
+### Fixed
+- Petunjuk "Tidak ada output sama sekali" sekarang menghitung baris output yang tidak kosong, jadi tetap muncul walau Node hanya mengeluarkan spasi atau baris kosong.
+
 ## [1.8.1] - 2026-10-10
 
 ### Added
