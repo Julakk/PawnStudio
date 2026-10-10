@@ -12,6 +12,15 @@
       ['\\p{Script=Devanagari}', '\\u0900-\\u097F'],
       ['\\p{Script=Thai}', '\\u0E00-\\u0E7F']
     ];
+    // PS_REGEX_COMPAT_2: runtime tanpa ICU gak kenal \p{...} sama sekali
+    var LETTER = 'A-Za-z\\u00AA\\u00B5\\u00BA\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u02C1\\u0370-\\u1FFF\\u2C00-\\uD7FF\\uF900-\\uFDFF\\uFE70-\\uFEFC\\u{10000}-\\u{10FFFF}';
+    var NUMBER = '0-9\\u00B2\\u00B3\\u00B9\\u00BC-\\u00BE\\u0660-\\u0669\\u06F0-\\u06F9\\u0966-\\u096F\\u0E50-\\u0E59\\uFF10-\\uFF19';
+    MAP.push(
+      ['\\p{Letter}', LETTER],
+      ['\\p{L}', LETTER],
+      ['\\p{Number}', NUMBER],
+      ['\\p{N}', NUMBER]
+    );
     M.prototype._compile = function (content, filename) {
       if (typeof content === 'string' &&
           (content.indexOf('\\p{sc=') !== -1 || content.indexOf('\\p{Script=') !== -1)) {

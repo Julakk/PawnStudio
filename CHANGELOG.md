@@ -2,6 +2,11 @@
 
 Semua perubahan penting pada project PawnStudio dicatat di file ini.
 
+## [1.8.5] - 2026-10-10
+
+### Fixed
+- Lanjutan 1.8.4: runtime Node di APK tidak mendukung `\p{...}` sama sekali, jadi `\p{Letter}` dan `\p{Number}` di `discord-api-types` juga ikut diganti ke range Unicode setara. Bot discord.js sekarang bisa dimuat tanpa `Invalid regular expression`.
+
 ## [1.8.4] - 2026-10-10
 
 ### Fixed
