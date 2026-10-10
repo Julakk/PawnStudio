@@ -23,7 +23,7 @@
     );
     M.prototype._compile = function (content, filename) {
       if (typeof content === 'string' &&
-          (content.indexOf('\\p{sc=') !== -1 || content.indexOf('\\p{Script=') !== -1)) {
+          content.indexOf('\\p{') !== -1) {
         for (var i = 0; i < MAP.length; i++) {
           content = content.split(MAP[i][0]).join(MAP[i][1]);
         }
