@@ -2,6 +2,11 @@
 
 Semua perubahan penting pada project PawnStudio dicatat di file ini.
 
+## [1.8.8] - 2026-10-10
+
+### Fixed
+- Nomor versi di Pengaturan sekarang sesuai dengan versi APK.
+
 ## [1.8.7] - 2026-10-10
 
 ### Fixed
