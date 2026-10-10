@@ -123,6 +123,11 @@ public class NodeRunnerPlugin extends Plugin {
 
             List<String> cmd = new ArrayList<>();
             cmd.add(new File(nativeLibDir(), EXEC_NAME).getAbsolutePath());
+            File pre = ensurePreload();
+            if (pre != null) {
+                cmd.add("-r");
+                cmd.add(pre.getAbsolutePath());
+            }
             cmd.add(script.getAbsolutePath());
             launch(call, cmd, root, null);
         } catch (Exception e) {
@@ -211,6 +216,23 @@ public class NodeRunnerPlugin extends Plugin {
             launch(call, cmd, root, env);
         } catch (Exception e) {
             call.reject("Gagal menjalankan npm: " + e.getMessage());
+        }
+    }
+
+    // Salin shim diagnostik (assets/nodeshim/preload.js) ke folder kerja Node.
+    private File ensurePreload() {
+        try (InputStream in = getContext().getAssets().open("nodeshim/preload.js")) {
+            File home = new File(getContext().getFilesDir(), "node-home");
+            if (!home.exists()) home.mkdirs();
+            File out = new File(home, "ps-preload.js");
+            try (FileOutputStream fos = new FileOutputStream(out)) {
+                byte[] buf = new byte[4096];
+                int n;
+                while ((n = in.read(buf)) > 0) fos.write(buf, 0, n);
+            }
+            return out;
+        } catch (Exception e) {
+            return null;
         }
     }
 

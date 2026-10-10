@@ -2,6 +2,7 @@
 (function () {
   var running = false, kind = 'node', outH = null, exitH = null, buf = '', flushT = null, runBtn = null, runIcon = '';
   var MAX_LINES = 3000;
+  var gotOut = false;
   var NPM_CMDS = ['install', 'i', 'add', 'uninstall', 'remove', 'rm', 'update', 'ls', 'list', 'init'];
   var STOP_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>';
 
@@ -32,6 +33,7 @@
 
   function flush() { if (buf) { addLine(buf, lineType(buf)); buf = ''; } }
   function pushText(t) {
+    if (String(t).length) gotOut = true;
     buf += String(t).replace(/\r\n/g, '\n');
     var parts = buf.split('\n');
     buf = parts.pop();
@@ -108,6 +110,7 @@
     showOutputPanel();
     setOutputLines([{ text: '$ ' + label, type: 'info' }]);
     buf = '';
+    gotOut = false;
     setStatus('running', '⟳ ' + (k === 'npm' ? 'npm' : 'Node'));
     try {
       outH = await p.addListener('output', function (ev) { pushText((ev && ev.text) || ''); });

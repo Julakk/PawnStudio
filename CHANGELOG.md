@@ -2,6 +2,12 @@
 
 Semua perubahan penting pada project PawnStudio dicatat di file ini.
 
+## [1.8.1] - 2026-10-10
+
+### Added
+- Diagnostik exit Node.js: kalau script keluar lewat process.exit(kode) dengan kode bukan 0, panel Output menampilkan dari file dan baris mana process.exit() dipanggil. Berguna buat nemuin script yang keluar diam-diam (misalnya validasi config tanpa pesan).
+- Petunjuk di panel Output kalau Node keluar dengan error tanpa output sama sekali.
+
 ## [1.8.0] - 2026-10-10
 
 ### Added
