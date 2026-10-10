@@ -46,6 +46,11 @@ const FileManager = (function () {
     return result.data;
   }
 
+  async function readFileBase64(path) {
+    const result = await NativeStorage.readFileBase64({ path });
+    return result.data;
+  }
+
   async function writeFile(path, content) {
     await NativeStorage.writeFile({ path, content });
   }
@@ -78,6 +83,7 @@ const FileManager = (function () {
     createFile,
     createFolder,
     readFile,
+    readFileBase64,
     writeFile,
     deleteEntry,
     renameEntry,

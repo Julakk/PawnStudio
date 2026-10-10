@@ -113,6 +113,39 @@ public class NativeStoragePlugin extends Plugin {
         }
     }
 
+    // Baca file sebagai base64 (untuk gambar di preview HTML). Dibatasi 4 MB dan hanya di dalam workspace.
+    @PluginMethod
+    public void readFileBase64(PluginCall call) {
+        String path = call.getString("path");
+        if (path == null) {
+            call.reject("path kosong");
+            return;
+        }
+        try {
+            File root = new File(getRootDir().toString());
+            File file = new File(getRootDir(), path);
+            if (!file.getCanonicalPath().startsWith(root.getCanonicalPath() + File.separator)) {
+                call.reject("Path di luar workspace");
+                return;
+            }
+            if (file.length() > 4L * 1024 * 1024) {
+                call.reject("File lebih dari 4 MB");
+                return;
+            }
+            java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream((int) file.length());
+            try (java.io.FileInputStream in = new java.io.FileInputStream(file)) {
+                byte[] buf = new byte[8192];
+                int n;
+                while ((n = in.read(buf)) != -1) bos.write(buf, 0, n);
+            }
+            JSObject ret = new JSObject();
+            ret.put("data", android.util.Base64.encodeToString(bos.toByteArray(), android.util.Base64.NO_WRAP));
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("Gagal baca file: " + e.getMessage());
+        }
+    }
+
     @PluginMethod
     public void writeFile(PluginCall call) {
         String path = call.getString("path");
