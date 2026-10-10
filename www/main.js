@@ -885,11 +885,32 @@ function showOutputPanel() {
     panel.innerHTML = `
       <div id="output-panel-header">
         <span>OUTPUT</span>
-        <button id="output-panel-close">×</button>
+        <span id="output-panel-actions"><button id="output-panel-copy">Salin</button><button id="output-panel-close">×</button></span>
       </div>
       <div id="output-panel-body"></div>
     `;
     document.getElementById("main-area").appendChild(panel);
+    const copyBtn = document.getElementById("output-panel-copy");
+    copyBtn.addEventListener("click", async () => {
+      const bodyEl = document.getElementById("output-panel-body");
+      const text = Array.from(bodyEl.children).map((n) => n.textContent).join("\n");
+      let ok = false;
+      try { await navigator.clipboard.writeText(text); ok = true; } catch (e) {}
+      if (!ok) {
+        try {
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          ok = document.execCommand("copy");
+          document.body.removeChild(ta);
+        } catch (e) {}
+      }
+      copyBtn.textContent = ok ? "Tersalin ✓" : "Gagal";
+      setTimeout(() => { copyBtn.textContent = "Salin"; }, 1500);
+    });
     document.getElementById("output-panel-close").addEventListener("click", () => {
       panel.classList.add("hidden");
       clearErrorHighlight();
@@ -947,7 +968,7 @@ function clearErrorHighlight() {
 
 const SETTINGS_KEY = "pawnstudio_settings";
 const SETTINGS_VERSION = 2;
-const APP_VERSION = "1.8.9";
+const APP_VERSION = "1.9.0";
 
 function loadSettings() {
   const raw = localStorage.getItem(SETTINGS_KEY);

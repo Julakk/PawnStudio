@@ -997,3 +997,22 @@ body:has(#v151-bar.show) #sidebar {
   padding-bottom: 56px;
   box-sizing: border-box;
 }
+
+/* Output: tombol salin + teks bisa di-select */
+#output-panel-actions { display: flex; align-items: center; gap: 6px; }
+#output-panel-copy {
+  background: #37373d;
+  border: 1px solid #4a4a50;
+  border-radius: 4px;
+  color: #d4d4d4;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  height: 22px;
+}
+#output-panel-copy:active { background: #094771; }
+#output-panel-body, #output-panel-body * {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
