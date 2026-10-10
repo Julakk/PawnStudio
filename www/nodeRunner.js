@@ -101,7 +101,7 @@
       showOutputPanel();
       setOutputLines([
         { text: 'npm tidak ada di APK ini.', type: 'error' },
-        { text: 'Pastikan APK dibuild dengan npm (versi 1.8.8 ke atas).', type: 'info' }
+        { text: 'Pastikan APK dibuild dengan npm (versi 1.8.0 ke atas).', type: 'info' }
       ]);
       return;
     }
