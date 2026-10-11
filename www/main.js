@@ -694,7 +694,6 @@ function bindGlobalActions() {
 
   document.getElementById("btn-save").addEventListener("click", saveActiveTab);
   document.getElementById("btn-find").addEventListener("click", openFindReplace);
-  document.getElementById("activity-search").addEventListener("click", openFindReplace);
 
   document.getElementById("btn-new-file").addEventListener("click", handleNewFile);
   document.getElementById("btn-new-folder").addEventListener("click", handleNewFolder);
