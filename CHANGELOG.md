@@ -2,6 +2,17 @@
 
 Semua perubahan penting pada project PawnStudio dicatat di file ini.
 
+## [1.11.0] - 2026-10-12
+
+### Added
+- **Emmet** untuk file HTML dan CSS. Ketik singkatan seperti `ul>li*3` lalu expand untuk menghasilkan struktur otomatis.
+- Tombol **Fmt** di toolbar simbol untuk merapikan kode.
+- **Auto-complete PAWN** dari isi project: `native`, `stock`, `define`, dan `enum` ikut disarankan saat mengetik.
+- **Git di dalam aplikasi** (JGit):
+  - Baca saja: status file, cabang, dan riwayat commit.
+  - Akun, inisialisasi repo, dan commit file yang dipilih.
+  - Atur remote, push, dan pull dengan token GitHub.
+
 ## [1.10.0] - 2026-10-11
 
 ### Added
