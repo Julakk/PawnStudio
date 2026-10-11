@@ -22,6 +22,13 @@ Dibangun pakai HTML, CSS, dan JavaScript murni, dibungkus jadi APK Android lewat
 - **npm install di HP**: tombol npm di Explorer, pasang paket JavaScript murni (discord.js, express, dll) langsung ke folder project
 - **Multi-tab**: buka beberapa file `.pwn` sekaligus, ada indikator unsaved changes
 - **Compile langsung di HP**: pakai `pawncc` native (arm64-v8a), hasilnya tampil di panel output
+- **Auto-complete PAWN dari project**: saran `native`, `stock`, `define`, dan `enum` dari isi project
+- **Emmet & Format Kode**: ketik `ul>li*3` di HTML/CSS, plus tombol **Fmt** untuk merapikan kode
+- **Cari & Ganti di semua file**: kayak Ctrl+Shift+F di VS Code, dengan opsi huruf besar/kecil, kata utuh, regex, dan filter ekstensi
+- **Git di dalam aplikasi**: lihat status, cabang, dan riwayat, lalu commit, push, dan pull langsung dari HP (HTTPS + token GitHub)
+- **Preview HTML/CSS/JS**: live preview, mode split, gambar lokal, dan `console.log` tampil di panel Output
+- **Pilihan versi SA-MP**: `0.3.DL-R1`, `0.3.7-R2-1`, atau `0.3.7-R3`, supaya fungsi khusus DL langsung error saat compile kalau targetnya 0.3.7
+- **Pengaturan**: tema editor (Monokai, Dracula, One Dark, AMOLED, Light), ukuran font, dan flag compiler tambahan
 - **Auto build APK**: tiap push ke `main`, GitHub Actions otomatis build APK dan bikin Release
 
 ## 📦 Struktur Proyek
@@ -81,6 +88,17 @@ APK di-build otomatis lewat GitHub Actions tiap kali push ke branch `main`. Hasi
 - [x] Custom theme & font size settings
 - [x] Include proyek otomatis terdeteksi (include/ dan pawno/include)
 - [x] Multi-file compile (include ditelusuri otomatis)
+- [x] Emmet dan format kode
+- [x] Auto-complete PAWN dari isi project
+- [x] Git di dalam aplikasi (status, commit, push, pull)
+- [x] Preview HTML/CSS/JS
+- [x] Cari & Ganti di semua file
+- [x] Pilihan versi SA-MP dan flag compiler tambahan
+
+## 🔒 Catatan Keamanan
+
+- Token GitHub (fitur Git) disimpan di penyimpanan privat aplikasi dan tidak ikut backup Android, tapi belum dienkripsi tambahan. Pakai token khusus repo yang dipakai dengan akses seminimal mungkin.
+- Fitur Cari & Ganti dan Ganti Semua menulis langsung ke file project dan tidak bisa di-undo. Simpan atau commit dulu sebelum dipakai.
 
 ## 👤 Author
 
