@@ -108,7 +108,7 @@ Bagian dari ekosistem **Ahmad Store** (hosting server game SA-MP/open.mp, FiveM,
 
 ## 📄 License
 
-Dirilis dengan lisensi MIT. Lihat [LICENSE.md](LICENSE.md).
+Dirilis sebagai freeware (bukan open source). Lihat [LICENSE.md](LICENSE.md) dan [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## Pihak ketiga
 
