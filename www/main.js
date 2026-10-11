@@ -767,7 +767,7 @@ function runCompiler() {
     }
   } catch (e) { preLines = []; }
 
-  PawnCompiler.compile({ source: code, fileName: fileName, path: activeTabPath, flags: (function(){ try { return localStorage.getItem("pawnstudio.compilerFlags") || ""; } catch (e) { return ""; } })() })
+  PawnCompiler.compile({ source: code, fileName: fileName, path: activeTabPath, sampVersion: (function(){ try { return localStorage.getItem("pawnstudio.sampVersion") || "dl-r1"; } catch (e) { return "dl-r1"; } })(), flags: (function(){ try { return localStorage.getItem("pawnstudio.compilerFlags") || ""; } catch (e) { return ""; } })() })
     .then((result) => {
       const lines = preLines.slice();
       if (result.debugCmd) {

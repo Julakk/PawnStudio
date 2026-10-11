@@ -739,6 +739,7 @@ public class PawnCompilerPlugin extends Plugin {
         String rawFileName = call.getString("fileName", "main");
         String relativeFilePath = call.getString("path", "");
         final String userFlags = call.getString("flags", "");
+        final String sampVersion = call.getString("sampVersion", "dl-r1");
 
         if (sourceCode == null) {
             call.reject("Parameter 'source' wajib diisi");
@@ -789,6 +790,7 @@ public class PawnCompilerPlugin extends Plugin {
             cmdArgs.add(binFile.getAbsolutePath());
             cmdArgs.add(sourceFile.getAbsolutePath());
             cmdArgs.add("-o" + outputAmx.getAbsolutePath());
+            if (!ompMode && sampVersion.startsWith("037")) cmdArgs.add("SAMP_TARGET_037=1");
             if (ompMode) {
                 // open.mp: include project dulu (kalau user bawa versi sendiri),
                 // lalu std open.mp, baru include bawaan klasik.

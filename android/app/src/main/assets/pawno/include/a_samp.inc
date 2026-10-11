@@ -1166,12 +1166,14 @@ native ConnectNPC(const name[], const script[]);
 /// <returns><b><c>1</c></b> if the player is an NPC, <b><c>0</c></b> if not.</returns>
 native IsPlayerNPC(playerid);
 
+#if !defined SAMP_TARGET_037
 native AddCharModel(baseid, newid, const dffname[], const txdname[]);
 native AddSimpleModel(virtualworld, baseid, newid, const dffname[], const txdname[]);
 native AddSimpleModelTimed(virtualworld, baseid, newid, const dffname[], const txdname[], timeon, timeoff);
 native FindModelFileNameFromCRC(crc, retstr[], retstr_size = sizeof retstr);
 native FindTextureFileNameFromCRC(crc, retstr[], retstr_size = sizeof retstr);
 native RedirectDownload(playerid, const url[]);
+#endif
 
 // Admin
 
