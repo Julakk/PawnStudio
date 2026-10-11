@@ -1,4 +1,4 @@
-// PawnStudio - Panel Git (tahap 2a: lihat, inisialisasi, commit lokal) (v1.11.0)
+// PawnStudio - Panel Git (tahap 2b: lihat, commit, remote, push, pull) (v1.11.0)
 // Ikon Git di bar kiri membuka panel: cabang, remote, file yang berubah, commit, dan riwayat.
 (function () {
   'use strict';
@@ -28,11 +28,11 @@
     if (d < 2592000) return Math.floor(d / 86400) + ' hari lalu';
     return Math.floor(d / 2592000) + ' bln lalu';
   }
-  function say(text, ok) {
+  function say(text, ok, neutral) {
     if (!msgEl) return;
     msgEl.textContent = text || '';
     msgEl.style.display = text ? 'block' : 'none';
-    msgEl.style.color = ok ? '#73c991' : '#f48771';
+    msgEl.style.color = neutral ? '#a3a3a3' : (ok ? '#73c991' : '#f48771');
   }
   function errText(e) { return (e && e.message) || String(e); }
 
@@ -69,11 +69,23 @@
       var b = el('button', BTN_MAIN, 'Inisialisasi repo di sini');
       b.addEventListener('click', doInit);
       body.appendChild(b);
-      body.appendChild(note('Membuat folder .git (cabang main). Commit dan push ke GitHub ada di tahap berikutnya.'));
+      body.appendChild(note('Membuat folder .git (cabang main). Setelah itu atur remote untuk push ke GitHub.'));
       return;
     }
     branchEl.textContent = '⎇ ' + (st.branch || '(tanpa cabang)');
-    body.appendChild(note(st.remote ? 'Remote: ' + st.remote : 'Belum ada remote "origin".'));
+    var rrow = el('div', 'display:flex;align-items:center;gap:8px;padding:8px 0;');
+    rrow.appendChild(el('span', 'flex:1;min-width:0;word-break:break-all;font-size:13px;color:#a3a3a3;', st.remote ? 'Remote: ' + st.remote : 'Belum ada remote "origin".'));
+    var rbtn = el('button', BTN, st.remote ? 'Ubah' : 'Atur remote');
+    rbtn.addEventListener('click', function () { if (!busy) showRemote(); });
+    rrow.appendChild(rbtn);
+    body.appendChild(rrow);
+    if (st.remote) {
+      var nrow = el('div', 'display:flex;gap:10px;margin:4px 0;');
+      var pl = el('button', BTN + 'flex:1;padding:10px;', 'Pull'); pl.id = 'git-pull-btn'; pl.addEventListener('click', doPull);
+      var ps = el('button', BTN + 'flex:1;padding:10px;', 'Push'); ps.id = 'git-push-btn'; ps.addEventListener('click', doPush);
+      nrow.appendChild(pl); nrow.appendChild(ps);
+      body.appendChild(nrow);
+    }
 
     var files = st.files || [], total = st.total || 0;
     files.forEach(function (f) { if (!(f.path in choice)) choice[f.path] = !IGNORABLE.test(f.path); });
@@ -156,7 +168,7 @@
     var n = field('Nama (muncul di commit)', id.name);
     var e = field('Email (muncul di commit)', id.email, 'email');
     var u = field('Username GitHub (opsional)', id.username);
-    var t = field('Token GitHub (untuk push, tahap berikutnya)', '', 'password', id.hasToken ? 'Tersimpan. Isi untuk mengganti.' : 'ghp_...');
+    var t = field('Token GitHub (untuk push; pull repo privat)', '', 'password', id.hasToken ? 'Tersimpan. Isi untuk mengganti.' : 'ghp_...');
     body.appendChild(note('Token disimpan di penyimpanan privat aplikasi dan tidak ikut backup Android, tetapi tidak dienkripsi tambahan. Jangan isi token berhak akses luas: buat token khusus repo yang dipakai.'));
     var save = el('button', BTN_MAIN + 'width:100%;margin-top:6px;', 'Simpan');
     save.addEventListener('click', async function () {
@@ -189,7 +201,71 @@
     body.appendChild(back);
   }
 
+  // ---- layar remote ----
+  function showRemote() {
+    var cur = (state.st && state.st.remote) || '';
+    body.innerHTML = '';
+    body.appendChild(el('div', 'font-size:12px;color:#a3a3a3;', 'URL repository (HTTPS)'));
+    var i = el('input', INPUT); i.type = 'url'; i.value = cur; i.placeholder = 'https://github.com/pengguna/repo.git';
+    i.autocomplete = 'off'; i.setAttribute('autocapitalize', 'off');
+    body.appendChild(i);
+    body.appendChild(note('Hanya HTTPS. Token jangan ditaruh di URL, isi lewat tombol Akun.'));
+    var save = el('button', BTN_MAIN + 'width:100%;margin-top:6px;', 'Simpan remote');
+    save.addEventListener('click', async function () {
+      if (busy) return;
+      var u = i.value.trim();
+      if (!/^https:\/\/[^\s@]+$/.test(u)) { say('URL harus diawali https://, tanpa spasi dan tanpa token di dalamnya.'); return; }
+      var p = plug(); if (!p) return;
+      setBusy(true);
+      try { await p.setRemote({ path: '', url: u }); say('Remote disimpan.', true); }
+      catch (x) { say('Gagal menyimpan remote: ' + errText(x)); setBusy(false); return; }
+      setBusy(false);
+      await load(true);
+    });
+    body.appendChild(save);
+    var back = el('button', BTN + 'width:100%;margin-top:10px;', 'Kembali');
+    back.addEventListener('click', render);
+    body.appendChild(back);
+  }
+
   // ---- aksi ----
+  var PULL_TEXT = {
+    'Already-up-to-date': 'Sudah terbaru, tidak ada perubahan dari remote.',
+    'Fast-forward': 'Pull berhasil (fast-forward).',
+    'Merged': 'Pull berhasil, digabung dengan perubahan lokal.'
+  };
+
+  async function doPush() {
+    if (busy) return;
+    var p = plug(); if (!p) return;
+    if (!state.id || !state.id.hasToken) { showIdentity('Isi token GitHub dulu untuk Push.'); return; }
+    if (!confirm('Kirim (push) cabang ' + ((state.st && state.st.branch) || '') + ' ke origin?')) return;
+    setBusy(true);
+    say('Mengirim ke remote…', null, true);
+    try {
+      var r = await p.push({ path: '' });
+      if (r.sent > 0) say('Push berhasil.', true);
+      else if (r.upToDate > 0) say('Sudah terbaru di remote, tidak ada yang dikirim.', true);
+      else say('Tidak ada yang dikirim. Cek cabang dan remote.');
+    } catch (e) { say('Push gagal: ' + errText(e)); }
+    setBusy(false);
+    await load(true);
+  }
+
+  async function doPull() {
+    if (busy) return;
+    var p = plug(); if (!p) return;
+    if (!confirm('Ambil perubahan dari origin dan gabungkan ke cabang ini? File di folder bisa berubah.')) return;
+    setBusy(true);
+    say('Mengambil dari remote…', null, true);
+    try {
+      var r = await p.pull({ path: '' });
+      say(PULL_TEXT[r.status] || ('Pull selesai' + (r.status ? ': ' + r.status : '.')), true);
+    } catch (e) { say('Pull gagal: ' + errText(e)); }
+    setBusy(false);
+    await load(true);
+  }
+
   async function doInit() {
     if (busy) return;
     var p = plug(); if (!p) return;

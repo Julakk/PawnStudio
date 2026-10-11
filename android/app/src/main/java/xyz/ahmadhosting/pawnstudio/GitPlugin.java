@@ -11,13 +11,21 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.PullResult;
+import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.api.Status;
+import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.transport.CredentialsProvider;
+import org.eclipse.jgit.transport.PushResult;
+import org.eclipse.jgit.transport.RemoteRefUpdate;
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -25,6 +33,7 @@ import java.util.TreeMap;
 
 // Git di PawnStudio. Tahap 1: status, cabang, riwayat (baca saja).
 // Tahap 2a: simpan identitas, inisialisasi repo, commit file terpilih (semuanya lokal, tanpa jaringan).
+// Tahap 2b: atur remote, push, pull (HTTPS + token GitHub).
 @CapacitorPlugin(name = "GitNative")
 public class GitPlugin extends Plugin {
     private static final int MAX_FILES = 500;
@@ -279,6 +288,190 @@ public class GitPlugin extends Plugin {
             }
         } catch (Throwable t) {
             call.reject("Git: " + t.getMessage());
+        }
+    }
+
+    // ---- jaringan (tahap 2b): remote, push, pull. HTTPS + token. ----
+    private CredentialsProvider creds() throws Exception {
+        File tf = tokenFile();
+        if (!tf.exists() || tf.length() == 0) {
+            throw new IllegalStateException("Token GitHub belum diisi (tombol Akun)");
+        }
+        String token = new String(Files.readAllBytes(tf.toPath()), "UTF-8").trim();
+        String user = prefs().getString("username", "");
+        return new UsernamePasswordCredentialsProvider(user.isEmpty() ? "x-access-token" : user, token);
+    }
+
+    private static String friendly(Throwable t) {
+        String m = String.valueOf(t.getMessage());
+        String l = m.toLowerCase();
+        if (l.contains("not found in upstream") || l.contains("couldn't find remote ref")) {
+            return "Cabang ini belum ada di remote. Lakukan Push dulu. (" + m + ")";
+        }
+        if (l.contains("not authorized") || l.contains("401") || l.contains("403") || l.contains("authentication")) {
+            return "Token ditolak atau tidak punya izin untuk repo ini. Cek token di Akun. (" + m + ")";
+        }
+        if (l.contains("unknownhost") || l.contains("unable to resolve") || l.contains("timed out")) {
+            return "Tidak bisa terhubung ke server. Cek koneksi internet. (" + m + ")";
+        }
+        if (l.contains("not found") || l.contains("404")) {
+            return "Repository di remote tidak ditemukan atau token tidak punya akses. (" + m + ")";
+        }
+        return m;
+    }
+
+    private static String cleanUrl(String url) {
+        String u = url == null ? "" : url.trim();
+        if (!u.startsWith("https://")) throw new IllegalArgumentException("URL remote harus diawali https://");
+        if (u.matches(".*\\s.*")) throw new IllegalArgumentException("URL remote tidak boleh mengandung spasi");
+        if (u.matches("^https://[^/@]+@.*")) {
+            throw new IllegalArgumentException("Jangan taruh token di URL. Isi token lewat tombol Akun");
+        }
+        return u;
+    }
+
+    // Hubungkan cabang aktif ke origin supaya pull tahu cabang mana yang diambil.
+    private static void configureTracking(Repository repo, StoredConfig cfg) throws Exception {
+        String full = repo.getFullBranch();
+        if (full != null && full.startsWith("refs/heads/")) {
+            String b = full.substring("refs/heads/".length());
+            cfg.setString("branch", b, "remote", "origin");
+            cfg.setString("branch", b, "merge", full);
+        }
+    }
+
+    private static String originUrl(Repository repo) {
+        String url = repo.getConfig().getString("remote", "origin", "url");
+        return url == null ? "" : url;
+    }
+
+    @PluginMethod
+    public void setRemote(PluginCall call) {
+        try {
+            File dir = repoDir(call);
+            String url = cleanUrl(call.getString("url", ""));
+            if (!new File(dir, ".git").exists()) {
+                call.reject("Git: folder ini belum repository");
+                return;
+            }
+            try (Git git = Git.open(dir)) {
+                Repository repo = git.getRepository();
+                StoredConfig cfg = repo.getConfig();
+                cfg.setString("remote", "origin", "url", url);
+                cfg.setString("remote", "origin", "fetch", "+refs/heads/*:refs/remotes/origin/*");
+                configureTracking(repo, cfg);
+                cfg.save();
+            }
+            JSObject ret = new JSObject();
+            ret.put("remote", url);
+            call.resolve(ret);
+        } catch (Throwable t) {
+            call.reject("Git: " + t.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void push(PluginCall call) {
+        try {
+            File dir = repoDir(call);
+            if (!new File(dir, ".git").exists()) {
+                call.reject("Git: folder ini belum repository");
+                return;
+            }
+            try (Git git = Git.open(dir)) {
+                Repository repo = git.getRepository();
+                if (repo.resolve("HEAD") == null) {
+                    call.reject("Git: belum ada commit untuk di-push");
+                    return;
+                }
+                if (originUrl(repo).isEmpty()) {
+                    call.reject("Git: atur remote dulu");
+                    return;
+                }
+                CredentialsProvider cp = creds();
+                int sent = 0, upToDate = 0;
+                StringBuilder bad = new StringBuilder();
+                for (PushResult r : git.push().setRemote("origin").setCredentialsProvider(cp).call()) {
+                    for (RemoteRefUpdate u : r.getRemoteUpdates()) {
+                        RemoteRefUpdate.Status s = u.getStatus();
+                        if (s == RemoteRefUpdate.Status.OK) {
+                            sent++;
+                        } else if (s == RemoteRefUpdate.Status.UP_TO_DATE) {
+                            upToDate++;
+                        } else if (s == RemoteRefUpdate.Status.REJECTED_NONFASTFORWARD
+                                || s == RemoteRefUpdate.Status.REJECTED_REMOTE_CHANGED) {
+                            bad.append("Ditolak: remote punya commit yang belum ada di sini. Pull dulu. ");
+                        } else {
+                            bad.append(u.getRemoteName()).append(": ").append(s);
+                            if (u.getMessage() != null) bad.append(" (").append(u.getMessage()).append(")");
+                            bad.append(' ');
+                        }
+                    }
+                }
+                if (bad.length() > 0) {
+                    call.reject("Git: " + bad.toString().trim());
+                    return;
+                }
+                JSObject ret = new JSObject();
+                ret.put("sent", sent);
+                ret.put("upToDate", upToDate);
+                call.resolve(ret);
+            }
+        } catch (Throwable t) {
+            call.reject("Git: " + friendly(t));
+        }
+    }
+
+    // Pull hanya jalan kalau file yang dilacak bersih. Kalau penggabungan gagal, dikembalikan ke commit semula.
+    @PluginMethod
+    public void pull(PluginCall call) {
+        try {
+            File dir = repoDir(call);
+            if (!new File(dir, ".git").exists()) {
+                call.reject("Git: folder ini belum repository");
+                return;
+            }
+            try (Git git = Git.open(dir)) {
+                Repository repo = git.getRepository();
+                if (originUrl(repo).isEmpty()) {
+                    call.reject("Git: atur remote dulu");
+                    return;
+                }
+                ObjectId before = repo.resolve("HEAD");
+                if (before == null) {
+                    call.reject("Git: belum ada commit lokal. Commit dulu sebelum Pull");
+                    return;
+                }
+                Status st = git.status().call();
+                if (!(st.getAdded().isEmpty() && st.getChanged().isEmpty() && st.getRemoved().isEmpty()
+                        && st.getModified().isEmpty() && st.getMissing().isEmpty() && st.getConflicting().isEmpty())) {
+                    call.reject("Git: ada perubahan yang belum di-commit. Commit dulu sebelum Pull");
+                    return;
+                }
+                // Repo publik bisa di-pull tanpa token; repo privat akan ditolak server dengan pesan jelas.
+                CredentialsProvider cp = hasToken() ? creds() : null;
+                StoredConfig cfg = repo.getConfig();
+                SharedPreferences p = prefs();
+                String name = p.getString("name", "");
+                String email = p.getString("email", "");
+                if (!name.isEmpty()) cfg.setString("user", null, "name", name);
+                if (!email.isEmpty()) cfg.setString("user", null, "email", email);
+                configureTracking(repo, cfg);
+                cfg.save();
+
+                PullResult pr = git.pull().setCredentialsProvider(cp).call();
+                if (!pr.isSuccessful()) {
+                    git.reset().setMode(ResetCommand.ResetType.HARD).setRef(before.getName()).call();
+                    call.reject("Git: Pull gagal digabung atau berkonflik, jadi dibatalkan dan file dikembalikan. "
+                            + "Selesaikan penggabungan di komputer atau Termux");
+                    return;
+                }
+                JSObject ret = new JSObject();
+                ret.put("status", pr.getMergeResult() == null ? "" : String.valueOf(pr.getMergeResult().getMergeStatus()));
+                call.resolve(ret);
+            }
+        } catch (Throwable t) {
+            call.reject("Git: " + friendly(t));
         }
     }
 }
