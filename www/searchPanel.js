@@ -205,6 +205,7 @@
     css.textContent = `
 #sidebar.search-mode{width:calc(100vw - 46px) !important;max-width:none !important;min-width:0 !important}
 @media(min-width:700px){#sidebar.search-mode{width:400px !important}}
+#sidebar.search-mode.hidden{display:none !important}
 #sidebar.search-mode > :not(#search-panel){display:none !important}
 #search-panel{display:none;flex-direction:column;height:100%;overflow:hidden;font-size:14px;color:#ccc;background:#252526}
 #sidebar.search-mode #search-panel{display:flex}
@@ -247,6 +248,14 @@
     $("sp-find").addEventListener("keydown", (e) => { if (e.key === "Enter") doSearch(); });
 
     const sBtn = $("activity-search"), eBtn = $("activity-explorer");
+    const hb = $("btn-toggle-sidebar");
+    if (hb) hb.addEventListener("click", () => {
+      if (sb.classList.contains("search-mode")) {
+        sb.classList.remove("search-mode");
+        sb.classList.add("hidden"); // handler ☰ asli akan membukanya sebagai Explorer
+        sBtn.classList.remove("active"); eBtn.classList.add("active");
+      }
+    }, true);
     $("sp-close").onclick = () => { sb.classList.add("hidden"); sBtn.classList.remove("active"); };
     sBtn.addEventListener("click", () => {
       if (sb.classList.contains("search-mode") && !sb.classList.contains("hidden")) { sb.classList.add("hidden"); sBtn.classList.remove("active"); return; }
