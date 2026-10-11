@@ -767,7 +767,7 @@ function runCompiler() {
     }
   } catch (e) { preLines = []; }
 
-  PawnCompiler.compile({ source: code, fileName: fileName, path: activeTabPath })
+  PawnCompiler.compile({ source: code, fileName: fileName, path: activeTabPath, flags: (function(){ try { return localStorage.getItem("pawnstudio.compilerFlags") || ""; } catch (e) { return ""; } })() })
     .then((result) => {
       const lines = preLines.slice();
       if (result.debugCmd) {

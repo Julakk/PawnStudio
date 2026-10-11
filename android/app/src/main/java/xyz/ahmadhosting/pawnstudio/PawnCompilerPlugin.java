@@ -738,6 +738,7 @@ public class PawnCompilerPlugin extends Plugin {
         String sourceCode = call.getString("source");
         String rawFileName = call.getString("fileName", "main");
         String relativeFilePath = call.getString("path", "");
+        final String userFlags = call.getString("flags", "");
 
         if (sourceCode == null) {
             call.reject("Parameter 'source' wajib diisi");
@@ -804,6 +805,15 @@ public class PawnCompilerPlugin extends Plugin {
                 }
             // Paling akhir: include bawaan cadangan (kalah prioritas sama project)
             cmdArgs.add("-i" + extraIncludeDir().getAbsolutePath());
+            // Flag tambahan dari user (whitelist ketat, tanpa -i/-o/-e/@file)
+            int flagCount = 0;
+            for (String tok : userFlags.trim().split("\\s+")) {
+                if (flagCount >= 10) break;
+                if (tok.matches("^-(d[0-3]|[;(][+-]|O[0-3]|v[0-2]|w[0-9]{1,3}[+-]?|E[+-]?)$")) {
+                    cmdArgs.add(tok);
+                    flagCount++;
+                }
+            }
 
             String stdout = "", stderr = "";
             int exitCode = 1;
