@@ -797,11 +797,11 @@ public class PawnCompilerPlugin extends Plugin {
                 cmdArgs.add("-i" + ompIncludeDir().getAbsolutePath());
                 cmdArgs.add("-i" + includeDir().getAbsolutePath());
             } else {
-                cmdArgs.add("-i" + includeDir().getAbsolutePath());
                 for (File extraIncludeDir : mirrorDirs) {
                     cmdArgs.add("-i" + extraIncludeDir.getAbsolutePath());
                 }
-            }
+            cmdArgs.add("-i" + includeDir().getAbsolutePath());
+                }
             // Paling akhir: include bawaan cadangan (kalah prioritas sama project)
             cmdArgs.add("-i" + extraIncludeDir().getAbsolutePath());
 
