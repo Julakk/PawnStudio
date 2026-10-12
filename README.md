@@ -20,6 +20,7 @@ Dibangun pakai HTML, CSS, dan JavaScript murni, dibungkus jadi APK Android lewat
 - **Dukungan Node.js**: auto-complete modul bawaan Node (fs, path, http, dll) dan snippet, buat nulis bot dan script langsung dari HP
 - **Jalanin Node.js di HP**: runtime Node.js 18 tertanam di APK (arm64), tekan Run di file .js dan output tampil live
 - **Node.js jalan di latar belakang**: bot tetap hidup walau app ditutup atau layar mati (foreground service + tombol Stop di notifikasi)
+- **Cek kompatibilitas HP**: Pengaturan, tombol Cek HP, menampilkan fitur yang didukung di HP kamu. Syarat: Android 8.0 ke atas dan HP arm64 (64-bit)
 - **npm install di HP**: tombol npm di Explorer, pasang paket JavaScript murni (discord.js, express, dll) langsung ke folder project
 - **Multi-tab**: buka beberapa file `.pwn` sekaligus, ada indikator unsaved changes
 - **Compile langsung di HP**: pakai `pawncc` native (arm64-v8a), hasilnya tampil di panel output

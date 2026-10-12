@@ -13,6 +13,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(GitPlugin.class);
         registerPlugin(BulkImportPlugin.class);
         registerPlugin(NodeRunnerPlugin.class);
+        registerPlugin(DeviceCheckPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

@@ -967,7 +967,7 @@ function clearErrorHighlight() {
 
 const SETTINGS_KEY = "pawnstudio_settings";
 const SETTINGS_VERSION = 2;
-const APP_VERSION = "1.14.0";
+const APP_VERSION = "1.14.1";
 
 function loadSettings() {
   const raw = localStorage.getItem(SETTINGS_KEY);
