@@ -26,10 +26,13 @@ import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.file.Files;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 // Git di PawnStudio. Tahap 1: status, cabang, riwayat (baca saja).
 // Tahap 2a: simpan identitas, inisialisasi repo, commit file terpilih (semuanya lokal, tanpa jaringan).
@@ -39,6 +42,10 @@ public class GitPlugin extends Plugin {
     private static final int MAX_FILES = 500;
     private static final String PREFS = "pawnstudio_git";
     private static final String TOKEN_FILE = "git-token";
+    // Push/pull jalan di thread sendiri supaya tidak menahan plugin lain (simpan file, compile)
+    // yang berbagi satu thread plugin Capacitor. Timeout = batas diam koneksi, bukan total durasi.
+    private static final ExecutorService NET = Executors.newSingleThreadExecutor();
+    private static final int NET_TIMEOUT_SEC = 60;
 
     @Override
     public void load() {
@@ -266,7 +273,8 @@ public class GitPlugin extends Plugin {
             }
             try (Git git = Git.open(dir)) {
                 for (String path : paths) {
-                    if (path == null || path.isEmpty() || path.startsWith("/") || path.contains("..")
+                    if (path == null || path.isEmpty() || path.startsWith("/")
+                            || path.equals("..") || path.startsWith("../") || path.contains("/../") || path.endsWith("/..")
                             || path.equals(".git") || path.startsWith(".git/")) {
                         call.reject("Git: path tidak valid: " + path);
                         return;
@@ -275,12 +283,24 @@ public class GitPlugin extends Plugin {
                     else git.rm().addFilepattern(path).call();
                 }
                 Status st = git.status().call();
-                if (st.getAdded().isEmpty() && st.getChanged().isEmpty() && st.getRemoved().isEmpty()) {
+                Set<String> staged = new HashSet<>();
+                staged.addAll(st.getAdded());
+                staged.addAll(st.getChanged());
+                staged.addAll(st.getRemoved());
+                boolean any = false;
+                for (String sel : paths) {
+                    if (staged.contains(sel)) { any = true; break; }
+                }
+                if (!any) {
                     call.reject("Git: tidak ada perubahan yang bisa di-commit pada file terpilih");
                     return;
                 }
-                RevCommit c = git.commit().setMessage(message.trim())
-                        .setAuthor(name, email).setCommitter(name, email).call();
+                // setOnly: hanya file terpilih yang masuk commit. File lain yang sudah ter-stage
+                // (percobaan sebelumnya atau dari luar app) tidak ikut terbawa.
+                org.eclipse.jgit.api.CommitCommand cc = git.commit().setMessage(message.trim())
+                        .setAuthor(name, email).setCommitter(name, email);
+                for (String sel : paths) cc.setOnly(sel);
+                RevCommit c = cc.call();
                 JSObject ret = new JSObject();
                 ret.put("id", c.getName().substring(0, 7));
                 ret.put("message", c.getShortMessage());
@@ -372,6 +392,10 @@ public class GitPlugin extends Plugin {
 
     @PluginMethod
     public void push(PluginCall call) {
+        NET.execute(() -> pushImpl(call));
+    }
+
+    private void pushImpl(PluginCall call) {
         try {
             File dir = repoDir(call);
             if (!new File(dir, ".git").exists()) {
@@ -391,7 +415,7 @@ public class GitPlugin extends Plugin {
                 CredentialsProvider cp = creds();
                 int sent = 0, upToDate = 0;
                 StringBuilder bad = new StringBuilder();
-                for (PushResult r : git.push().setRemote("origin").setCredentialsProvider(cp).call()) {
+                for (PushResult r : git.push().setRemote("origin").setCredentialsProvider(cp).setTimeout(NET_TIMEOUT_SEC).call()) {
                     for (RemoteRefUpdate u : r.getRemoteUpdates()) {
                         RemoteRefUpdate.Status s = u.getStatus();
                         if (s == RemoteRefUpdate.Status.OK) {
@@ -425,6 +449,10 @@ public class GitPlugin extends Plugin {
     // Pull hanya jalan kalau file yang dilacak bersih. Kalau penggabungan gagal, dikembalikan ke commit semula.
     @PluginMethod
     public void pull(PluginCall call) {
+        NET.execute(() -> pullImpl(call));
+    }
+
+    private void pullImpl(PluginCall call) {
         try {
             File dir = repoDir(call);
             if (!new File(dir, ".git").exists()) {
@@ -459,7 +487,7 @@ public class GitPlugin extends Plugin {
                 configureTracking(repo, cfg);
                 cfg.save();
 
-                PullResult pr = git.pull().setCredentialsProvider(cp).call();
+                PullResult pr = git.pull().setCredentialsProvider(cp).setTimeout(NET_TIMEOUT_SEC).call();
                 if (!pr.isSuccessful()) {
                     git.reset().setMode(ResetCommand.ResetType.HARD).setRef(before.getName()).call();
                     call.reject("Git: Pull gagal digabung atau berkonflik, jadi dibatalkan dan file dikembalikan. "
