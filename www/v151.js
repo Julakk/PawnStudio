@@ -15,12 +15,47 @@ function defThemes(m){
   function d(n,base,bg,fg,sel,line,c,s,nu,k,ty,fn){
     m.editor.defineTheme(n,{base:base,inherit:true,
       rules:[{token:'comment',foreground:c},{token:'string',foreground:s},{token:'number',foreground:nu},{token:'keyword',foreground:k},{token:'type',foreground:ty},{token:'function',foreground:fn},{token:'predefined',foreground:fn}],
-      colors:{'editor.background':'#'+bg,'editor.foreground':'#'+fg,'editor.selectionBackground':'#'+sel,'editor.lineHighlightBackground':'#'+line}});
+      colors:{'editor.background':'#'+bg,'editor.foreground':'#'+fg,'editor.selectionBackground':'#'+sel,'editor.lineHighlightBackground':'#'+line,
+        'editorCursor.foreground':'#'+fg,'editorLineNumber.foreground':'#'+c,'editorLineNumber.activeForeground':'#'+fg,
+        'editorGutter.background':'#'+bg,'minimap.background':'#'+bg,'stickyScroll.background':'#'+bg,
+        'editorIndentGuide.background':'#'+line,'editorIndentGuide.background1':'#'+line,
+        'editorWidget.background':'#'+line,'editorSuggestWidget.background':'#'+line,'editorHoverWidget.background':'#'+line,
+        'editor.inactiveSelectionBackground':'#'+line,'scrollbarSlider.background':'#'+sel+'88'}});
   }
   d('v151-monokai','vs-dark','272822','f8f8f2','49483e','3e3d32','75715e','e6db74','ae81ff','f92672','66d9ef','a6e22e');
   d('v151-dracula','vs-dark','282a36','f8f8f2','44475a','343746','6272a4','f1fa8c','bd93f9','ff79c6','8be9fd','50fa7b');
   d('v151-onedark','vs-dark','282c34','abb2bf','3e4451','2c313c','5c6370','98c379','d19a66','c678dd','e5c07b','61afef');
   d('v151-amoled','vs-dark','000000','d4d4d4','264f78','111111','6a9955','ce9178','b5cea8','569cd6','4ec9b0','dcdcaa');
+}
+
+var CHROME={'v151-monokai':'monokai','v151-dracula':'dracula','v151-onedark':'onedark','v151-amoled':'amoled','vs':'light'};
+// Warna antarmuka app (top bar, sidebar, tab, status bar...) diatur CSS lewat atribut data-v151 di <html>.
+function chrome(t){
+  try{
+    var k=CHROME[t]||'';
+    var h=document.documentElement;
+    if(k)h.setAttribute('data-v151',k);else h.removeAttribute('data-v151');
+  }catch(e){}
+}
+var baseTheme=null;
+function mainBase(){
+  var e=document.getElementById('setting-theme');
+  return (e&&e.value)||baseTheme||'vs-dark';
+}
+// Bungkus setTheme: selama tema tambahan aktif, panggilan setTheme dari main.js diarahkan ke tema pilihan.
+function guardTheme(m){
+  try{
+    if(m.editor.__v151g)return;
+    var orig=m.editor.setTheme.bind(m.editor);
+    m.editor.__v151o=orig;
+    m.editor.setTheme=function(n){baseTheme=n;var t=S.theme!=='default'?S.theme:n;orig(t);chrome(t);};
+    m.editor.__v151g=true;
+  }catch(e){}
+}
+function applyTheme(m){
+  guardTheme(m);
+  var set=m.editor.__v151o||m.editor.setTheme.bind(m.editor);
+  var t=S.theme!=='default'?S.theme:mainBase();set(t);chrome(t);
 }
 
 function applyAll(){
@@ -44,7 +79,7 @@ function applyAll(){
     var md=ed.getModel();
     if(md){try{md.updateOptions({tabSize:S.tab,insertSpaces:S.spaces});}catch(e){}}
   });
-  if(S.theme!=='default')m.editor.setTheme(S.theme);
+  applyTheme(m);
   if(S.font!=='default'&&document.fonts){document.fonts.load('14px "'+S.font+'"').then(function(){m.editor.remeasureFonts();});}
 }
 
@@ -114,7 +149,7 @@ function buildPanel(){
   var p=el('div');p.id='v151-panel';
   p.addEventListener('click',function(e){if(e.target===p)p.className='';});
   var sh=el('div','v151-sheet'),hd=el('div','v151-head');
-  hd.appendChild(el('span','','PENGATURAN LANJUTAN · v1.13.0'));
+  hd.appendChild(el('span','','PENGATURAN LANJUTAN · v1.14.0'));
   var x=el('button','','×');x.onclick=function(){p.className='';};
   hd.appendChild(x);sh.appendChild(hd);
   function sec(t){sh.appendChild(el('div','v151-sec',t));}
@@ -128,7 +163,7 @@ function buildPanel(){
   }
   function chk(k){var c=el('input');c.type='checkbox';c.checked=!!S[k];c.onchange=function(){S[k]=c.checked;commit();};return c;}
   sec('Tema & font');
-  row('Tema tambahan',sel('theme',[['default','Bawaan app (restart)'],['v151-monokai','Monokai'],['v151-dracula','Dracula'],['v151-onedark','One Dark'],['v151-amoled','AMOLED Black'],['vs','Light']]));
+  row('Tema tambahan',sel('theme',[['default','Bawaan app'],['v151-monokai','Monokai'],['v151-dracula','Dracula'],['v151-onedark','One Dark'],['v151-amoled','AMOLED Black'],['vs','Light']]));
   row('Font editor',sel('font',[['default','Bawaan'],['JetBrains Mono','JetBrains Mono'],['Fira Code','Fira Code']]));
   row('Ligature font',chk('ligature'));
   sec('Penulisan');
@@ -191,7 +226,8 @@ function init(){
   if(window.visualViewport)window.visualViewport.addEventListener('resize',kbCheck);
   if(S.awake)awake();
   window.PawnV151={open:open,state:function(){return S;}};
-  setTimeout(function(){if(!M())toast('v1.13.0: Monaco tidak terdeteksi');},20000);
+  setTimeout(function(){if(!M())toast('v1.14.0: Monaco tidak terdeteksi');},20000);
 }
+chrome(S.theme!=='default'?S.theme:'');
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
