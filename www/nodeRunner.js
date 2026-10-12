@@ -117,11 +117,56 @@
       exitH = await p.addListener('exit', handleExit);
       setRunning(true);
       await invoke(p);
+      if (k === 'node') askBattery(p);
     } catch (e) {
       cleanup();
       setRunning(false);
       addLine('Gagal menjalankan: ' + (e && e.message ? e.message : e), 'error');
       setStatus('fail', '✕ ' + (k === 'npm' ? 'npm' : 'Node') + ' gagal');
+    }
+  }
+
+  // Sekali saja: minta izin abaikan optimasi baterai supaya Node tahan di latar belakang.
+  function askBattery(p) {
+    try {
+      if (localStorage.getItem('ps_battery_asked')) return;
+      localStorage.setItem('ps_battery_asked', '1');
+      if (confirm('Biar Node.js tetap jalan di latar belakang (app ditutup / layar mati), izinkan PawnStudio mengabaikan optimasi baterai?')) p.batterySettings();
+    } catch (e) {}
+  }
+
+  // Sambungkan UI lagi ke proses Node yang jalan / selesai di latar belakang.
+  async function resync() {
+    var p = plug();
+    if (!p) return;
+    var st;
+    try { st = await p.status({ withLog: true }); } catch (e) { return; }
+    if (!st) return;
+    var lines = String(st.log || '').replace(/\r\n/g, '\n').split('\n')
+      .filter(function (l) { return l.trim(); })
+      .map(function (l) { return { text: l, type: lineType(l) }; });
+
+    if (st.running) {
+      showOutputPanel();
+      lines.unshift({ text: '[Tersambung lagi ke proses yang masih berjalan di latar belakang]', type: 'info' });
+      setOutputLines(lines);
+      buf = '';
+      outLines = lines.length - 1;
+      if (!outH) {
+        outH = await p.addListener('output', function (ev) { pushText((ev && ev.text) || ''); });
+        exitH = await p.addListener('exit', handleExit);
+      }
+      setStatus('running', '⟳ Node');
+      setRunning(true);
+    } else if (running) {
+      // event exit hilang waktu WebView dijeda
+      handleExit({ exitCode: st.exitCode || 0, stopped: !!st.stopped, durationMs: st.durationMs || 0 });
+    } else if (st.finished) {
+      showOutputPanel();
+      setOutputLines(lines);
+      outLines = lines.length;
+      kind = 'node';
+      handleExit({ exitCode: st.exitCode || 0, stopped: !!st.stopped, durationMs: st.durationMs || 0 });
     }
   }
 
@@ -175,4 +220,8 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindNpmButton);
   else bindNpmButton();
+
+  // Pulihkan status waktu app dibuka lagi atau kembali dari latar belakang.
+  setTimeout(resync, 700);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) resync(); });
 })();

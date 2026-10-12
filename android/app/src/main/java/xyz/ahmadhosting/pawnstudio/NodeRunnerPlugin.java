@@ -1,6 +1,14 @@
 package xyz.ahmadhosting.pawnstudio;
 
-import android.util.Log;
+import android.Manifest;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.Build;
+import android.os.PowerManager;
+import android.provider.Settings;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
@@ -13,9 +21,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -23,17 +28,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 // Jalanin file Node.js dan perintah npm di folder project aktif. Output dikirim
 // live lewat event "output", dan event "exit" waktu proses selesai / dihentikan.
+// Prosesnya dipegang NodeSession + NodeKeepAliveService, jadi tetap jalan di latar belakang.
 @CapacitorPlugin(name = "NodeRunner")
 public class NodeRunnerPlugin extends Plugin {
 
-    private static final String TAG = "NodeRunner";
     private static final String EXEC_NAME = "libnodeexec.so";
     private static final String LIB_NAME = "libnode.so";
     private static final String NPM_ASSET = "node/npm.zip";
@@ -49,9 +53,26 @@ public class NodeRunnerPlugin extends Plugin {
     private static final Pattern PKG_SPEC = Pattern.compile(
             "^(@[a-z0-9][a-z0-9._-]*/)?[a-z0-9][a-z0-9._-]*(@[A-Za-z0-9._^~<>=*-]+)?$");
 
-    private final Object lock = new Object();
-    private Process current = null;
-    private volatile boolean stopRequested = false;
+    private final NodeSession.Listener sessionListener = new NodeSession.Listener() {
+        @Override
+        public void onOutput(String text) {
+            emit(text);
+        }
+
+        @Override
+        public void onExit(int exitCode, boolean stopped, long durationMs) {
+            JSObject ex = new JSObject();
+            ex.put("exitCode", exitCode);
+            ex.put("stopped", stopped);
+            ex.put("durationMs", durationMs);
+            notifyListeners("exit", ex);
+        }
+    };
+
+    @Override
+    public void load() {
+        NodeSession.setListener(sessionListener);
+    }
 
     private String nativeLibDir() {
         return getContext().getApplicationInfo().nativeLibraryDir;
@@ -73,9 +94,7 @@ public class NodeRunnerPlugin extends Plugin {
     }
 
     private boolean busy() {
-        synchronized (lock) {
-            return current != null;
-        }
+        return NodeSession.isRunning();
     }
 
     private void emit(String text) {
@@ -89,7 +108,18 @@ public class NodeRunnerPlugin extends Plugin {
         JSObject r = new JSObject();
         r.put("available", runtimeAvailable());
         r.put("npm", npmAvailable());
-        r.put("running", busy());
+        boolean running = busy();
+        r.put("running", running);
+        // UI yang dibuka lagi: kirim log yang tersimpan, plus hasil proses yang selesai selagi app ditutup.
+        boolean away = !running && NodeSession.consumeAway();
+        if (running || away || call.getBoolean("withLog", false)) r.put("log", NodeSession.snapshotLog());
+        long[] last = NodeSession.lastExit();
+        if (!running && last != null) {
+            r.put("exitCode", (int) last[0]);
+            r.put("stopped", last[1] == 1);
+            r.put("durationMs", last[2]);
+        }
+        r.put("finished", away);
         call.resolve(r);
     }
 
@@ -301,8 +331,7 @@ public class NodeRunnerPlugin extends Plugin {
         if (!home.exists()) home.mkdirs();
         if (!tmp.exists()) tmp.mkdirs();
 
-        ProcessBuilder pb = new ProcessBuilder(cmd);
-        Map<String, String> env = pb.environment();
+        Map<String, String> env = new HashMap<>();
         env.put("LD_LIBRARY_PATH", nativeLibDir());
         // PS_PRELOAD_NODE: jadikan libnode.so global supaya addon native (.node) bisa menemukan simbol napi_*
         File psLibNode = new File(nativeLibDir(), "libnode.so");
@@ -310,81 +339,60 @@ public class NodeRunnerPlugin extends Plugin {
         env.put("HOME", home.getAbsolutePath());
         env.put("TMPDIR", tmp.getAbsolutePath());
         if (extraEnv != null) env.putAll(extraEnv);
-        pb.directory(cwd);
-        // stdout + stderr jadi satu pipa (hindari deadlock, sama seperti compiler PAWN)
-        pb.redirectErrorStream(true);
+        // Android 13+: izin notifikasi supaya notifikasi "Node.js berjalan" kelihatan.
+        requestNotifPermissionIfNeeded();
 
-        synchronized (lock) {
-            if (current != null) throw new IllegalStateException("Masih ada proses yang berjalan.");
-        }
-        final Process p = pb.start();
-        try { p.getOutputStream().close(); } catch (Exception ignored) {}
-        synchronized (lock) {
-            current = p;
-        }
-        stopRequested = false;
-        final long t0 = System.currentTimeMillis();
-
-        Thread t = new Thread(() -> {
-            int code = -1;
-            try {
-                Reader reader = new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8);
-                char[] buf = new char[2048];
-                int n;
-                while ((n = reader.read(buf)) != -1) {
-                    emit(new String(buf, 0, n));
-                }
-                code = p.waitFor();
-            } catch (Exception e) {
-                Log.w(TAG, "baca output gagal: " + e.getMessage());
-            } finally {
-                synchronized (lock) {
-                    if (current == p) current = null;
-                }
-                JSObject ex = new JSObject();
-                ex.put("exitCode", code);
-                ex.put("stopped", stopRequested);
-                ex.put("durationMs", System.currentTimeMillis() - t0);
-                notifyListeners("exit", ex);
-            }
-        }, "node-runner");
-        t.setDaemon(true);
-        t.start();
+        NodeSession.setListener(sessionListener);
+        NodeSession.start(getContext(), cmd, cwd, env);
 
         JSObject r = new JSObject();
         r.put("started", true);
         call.resolve(r);
     }
 
+    private void requestNotifPermissionIfNeeded() {
+        try {
+            if (Build.VERSION.SDK_INT >= 33 && getActivity() != null
+                    && ContextCompat.checkSelfPermission(getContext(), Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(getActivity(),
+                        new String[]{Manifest.permission.POST_NOTIFICATIONS}, 4101);
+            }
+        } catch (Exception ignored) {}
+    }
+
+    // Buka dialog sistem "abaikan optimasi baterai" supaya OEM (Samsung, Xiaomi, dll) tidak membunuh service.
     @PluginMethod
-    public void stop(PluginCall call) {
-        final Process p;
-        synchronized (lock) {
-            p = current;
-        }
+    public void batterySettings(PluginCall call) {
         JSObject r = new JSObject();
-        if (p == null) {
-            r.put("stopped", false);
-            call.resolve(r);
-            return;
+        try {
+            PowerManager pm = (PowerManager) getContext().getSystemService(android.content.Context.POWER_SERVICE);
+            String pkg = getContext().getPackageName();
+            boolean ignoring = pm != null && Build.VERSION.SDK_INT >= 23 && pm.isIgnoringBatteryOptimizations(pkg);
+            r.put("ignoring", ignoring);
+            if (!ignoring) {
+                Intent i = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                        Uri.parse("package:" + pkg));
+                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                getContext().startActivity(i);
+            }
+        } catch (Exception e) {
+            r.put("error", String.valueOf(e.getMessage()));
         }
-        stopRequested = true;
-        p.destroy();
-        new Thread(() -> {
-            try {
-                if (!p.waitFor(1500, TimeUnit.MILLISECONDS)) p.destroyForcibly();
-            } catch (InterruptedException ignored) {}
-        }).start();
-        r.put("stopped", true);
         call.resolve(r);
     }
 
+    @PluginMethod
+    public void stop(PluginCall call) {
+        JSObject r = new JSObject();
+        r.put("stopped", NodeSession.stop());
+        call.resolve(r);
+    }
+
+    // Activity ditutup: lepas listener saja. Proses Node sengaja TIDAK dibunuh,
+    // dia dijaga NodeKeepAliveService dan bisa dihentikan dari tombol Stop di notifikasi.
     @Override
     protected void handleOnDestroy() {
-        Process p;
-        synchronized (lock) {
-            p = current;
-        }
-        if (p != null) p.destroyForcibly();
+        NodeSession.clearListener(sessionListener);
     }
 }

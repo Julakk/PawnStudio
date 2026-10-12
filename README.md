@@ -19,6 +19,7 @@ Dibangun pakai HTML, CSS, dan JavaScript murni, dibungkus jadi APK Android lewat
 - **Icon folder & file berwarna**: gamemodes, plugins, scriptfiles, .pwn, .inc, .dll, dan lainnya mudah dikenali sekilas
 - **Dukungan Node.js**: auto-complete modul bawaan Node (fs, path, http, dll) dan snippet, buat nulis bot dan script langsung dari HP
 - **Jalanin Node.js di HP**: runtime Node.js 18 tertanam di APK (arm64), tekan Run di file .js dan output tampil live
+- **Node.js jalan di latar belakang**: bot tetap hidup walau app ditutup atau layar mati (foreground service + tombol Stop di notifikasi)
 - **npm install di HP**: tombol npm di Explorer, pasang paket JavaScript murni (discord.js, express, dll) langsung ke folder project
 - **Multi-tab**: buka beberapa file `.pwn` sekaligus, ada indikator unsaved changes
 - **Compile langsung di HP**: pakai `pawncc` native (arm64-v8a), hasilnya tampil di panel output
