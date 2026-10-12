@@ -3,8 +3,8 @@
 (function () {
   'use strict';
   var panel = null, body = null, busy = false, report = '';
-  var COL = { ok: '#73c991', warn: '#e2c08d', bad: '#f48771' };
-  var ICO = { ok: '✅', warn: '⚠️', bad: '❌' };
+  var COL = { ok: '#73c991', warn: '#e2c08d', bad: '#f48771', info: '#9cdcfe' };
+  var ICO = { ok: '✅', warn: '⚠️', bad: '❌', info: 'ℹ️' };
   var BG = 'var(--t-bg,#1e1e1e)', SIDE = 'var(--t-side,#252526)', FG = 'var(--t-fg,#d4d4d4)';
   var DIM = 'var(--t-dim,#a3a3a3)', BORDER = 'var(--t-border,#3c3c3c)', BTNBG = 'var(--t-btn,#37373d)';
   var BTN = 'background:' + BTNBG + ';border:1px solid ' + BORDER + ';border-radius:4px;color:' + FG + ';font-size:12px;font-weight:600;padding:6px 12px;';
@@ -19,6 +19,7 @@
     return e;
   }
   function gb(mb) { return (mb / 1024).toFixed(1) + ' GB'; }
+  function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
   function appVersion() { var v = document.getElementById('app-version'); return v ? v.textContent : ''; }
 
   function evaluate(d, ns) {
@@ -52,7 +53,7 @@
     else add('Penghematan baterai', 'warn', 'Masih dibatasi. Node.js di latar belakang bisa dimatikan sistem saat layar mati.', { label: 'Izinkan', what: 'battery' });
 
     if (OEM.test((d.manufacturer || '') + ' ' + (d.brand || ''))) {
-      add('Merek HP', 'warn', d.manufacturer + ' sering mematikan aplikasi di latar belakang. Selain izin baterai di atas, kunci PawnStudio di daftar recent apps dan atur penggunaan baterainya ke "Tanpa batasan".');
+      add('Merek HP', 'info', cap(d.manufacturer) + ' sering mematikan aplikasi di latar belakang. Selain izin baterai di atas, kunci PawnStudio di daftar recent apps dan atur penggunaan baterainya ke "Tanpa batasan".');
     }
 
     if (d.ramMb) {
@@ -68,7 +69,7 @@
 
   function summary(items) {
     var comp = items.filter(function (i) { return i.title === 'Compiler PAWN'; })[0];
-    var notes = items.filter(function (i) { return i.level !== 'ok'; }).length;
+    var notes = items.filter(function (i) { return i.level === 'warn' || i.level === 'bad'; }).length;
     if (comp && comp.level === 'bad') return { level: 'bad', text: 'Fitur utama (compile PAWN) tidak jalan di HP ini.' };
     if (notes) return { level: 'warn', text: 'Sebagian fitur terbatas atau perlu diaktifkan (' + notes + ' catatan).' };
     return { level: 'ok', text: 'Semua fitur didukung di HP ini.' };
@@ -77,7 +78,7 @@
   function buildReport(d, items, sum) {
     var lines = [
       'PawnStudio ' + appVersion() + ' - Laporan kompatibilitas HP',
-      'HP: ' + (d.manufacturer || '') + ' ' + (d.model || ''),
+      'HP: ' + cap(d.manufacturer) + ' ' + (d.model || ''),
       'Android ' + d.release + ' (API ' + d.sdk + ')',
       'CPU: ' + ((d.abis || []).join(', ') || '-'),
       'Kesimpulan: ' + sum.text,
@@ -110,7 +111,7 @@
 
     var box = el('div', 'border:1px solid ' + COL[sum.level] + ';border-radius:8px;padding:12px;margin-bottom:12px;background:' + SIDE + ';');
     box.appendChild(el('div', 'font-size:15px;font-weight:700;color:' + COL[sum.level] + ';', ICO[sum.level] + ' ' + sum.text));
-    box.appendChild(el('div', 'margin-top:6px;font-size:13px;color:' + DIM + ';', (d.manufacturer || '') + ' ' + (d.model || '') + '  ·  Android ' + d.release + '  ·  ' + appVersion()));
+    box.appendChild(el('div', 'margin-top:6px;font-size:13px;color:' + DIM + ';', cap(d.manufacturer) + ' ' + (d.model || '') + '  ·  Android ' + d.release + '  ·  ' + appVersion()));
     body.appendChild(box);
 
     items.forEach(function (i) {

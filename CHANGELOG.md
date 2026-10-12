@@ -2,6 +2,12 @@
 
 Semua perubahan penting pada project PawnStudio dicatat di file ini.
 
+## [1.14.2] - 2026-10-13
+
+### Fixed
+- Cek HP: tips merek HP (Samsung, Xiaomi, dan lainnya) sekarang berupa info biasa dan tidak dihitung sebagai catatan. Sebelumnya ringkasan di HP merek itu selalu "Sebagian fitur terbatas" walau semua izin sudah aktif.
+- Cek HP: nama merek ditulis dengan huruf awal besar (Samsung, bukan samsung).
+
 ## [1.14.1] - 2026-10-13
 
 ### Added
