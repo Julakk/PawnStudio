@@ -69,3 +69,29 @@ footer *,[class*="statusbar"] *,[class*="status-bar"] *{
   box-shadow:none!important;padding:4px 0!important;text-align:left!important;justify-content:flex-start!important}
 [class*="welcome"] button:active{text-decoration:underline}
 [class*="recent"] [class*="item"]{color:#3794ff!important;background:transparent!important}
+
+/* ===== class asli PawnStudio ===== */
+.activity-btn{width:48px!important;height:48px!important;background:transparent!important;
+  border:0!important;border-left:2px solid transparent!important;border-radius:0!important;
+  color:#858585!important;box-shadow:none!important}
+.activity-btn.active{color:#fff!important;border-left-color:#fff!important}
+.activity-spacer{flex:1}
+
+.entry-name,.name{font-size:13px!important;color:#ccc!important}
+.item-actions{opacity:0;transition:opacity .15s}
+*:hover>.item-actions,*:active>.item-actions,.item-actions:focus-within{opacity:1}
+.btn-more,.btn-rename,.btn-delete{background:transparent!important;border:0!important;color:#c5c5c5!important;
+  width:26px;height:26px;border-radius:3px!important}
+.btn-more:active,.btn-rename:active,.btn-delete:active{background:#ffffff1a!important}
+
+.welcome-btn{background:transparent!important;border:0!important;box-shadow:none!important;
+  color:#3794ff!important;padding:4px 0!important;justify-content:flex-start!important;text-align:left!important}
+.welcome-btn:active{text-decoration:underline}
+.welcome-subtitle{color:#858585!important;font-size:13px!important}
+
+.setting-row{background:transparent!important;border-bottom:1px solid #3c3c3c!important;border-radius:0!important;padding:10px 12px!important}
+.sp-head{font-size:11px!important;letter-spacing:.5px;text-transform:uppercase;color:#bbb!important}
+.ext-row{background:transparent!important;border-bottom:1px solid #2b2b2b!important;border-radius:0!important}
+.ext-name{color:#e7e7e7!important}.ext-sub{color:#858585!important}
+.ext-b.ext-p{background:#0e639c!important;color:#fff!important;border-radius:2px!important}
+.ext-tag{background:#4d4d4d!important;color:#fff!important;border-radius:10px!important}
