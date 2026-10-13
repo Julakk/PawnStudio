@@ -163,3 +163,9 @@ padding:5px 0!important;justify-content:flex-start!important;text-align:left!imp
 #ext-modal .ext-ico{grid-column:1;grid-row:1 / span 3;width:42px;height:42px;border-radius:4px;
   display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:#1e1e1e}
 #ext-modal .ext-row>:not(.ext-ico){grid-column:2}
+
+/* run hijau + judul recent */
+#btn-run,#btn-run svg{color:#89d185!important}
+#btn-run svg,#btn-run svg *{fill:#89d185!important}
+#welcome-inner #welcome-recent-title{text-transform:none!important;font-size:16px!important;
+  font-weight:400!important;letter-spacing:0!important}
