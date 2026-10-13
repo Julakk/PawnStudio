@@ -1,0 +1,71 @@
+/* PawnStudio - tema VS Code Dark+ */
+:root{
+  --vs-bg:#1e1e1e; --vs-side:#252526; --vs-act:#333333;
+  --vs-tab:#2d2d2d; --vs-sel:#37373d; --vs-hover:#2a2d2e;
+  --vs-border:#3c3c3c; --vs-text:#cccccc; --vs-dim:#858585;
+  --vs-blue:#007acc; --vs-title:#323233;
+}
+html,body{background:var(--vs-bg)!important;color:var(--vs-text)!important;
+  font-family:-apple-system,"Segoe UI",Roboto,sans-serif;font-size:13px}
+
+/* top bar: rata, ikon polos tanpa kotak */
+header,[class*="topbar"],[class*="titlebar"],[class*="appbar"]{
+  background:var(--vs-title)!important;border-bottom:1px solid #252526!important;
+  min-height:38px!important;padding:0 6px!important}
+header button,[class*="topbar"] button,[class*="titlebar"] button,[class*="appbar"] button{
+  background:transparent!important;border:0!important;border-radius:4px!important;
+  box-shadow:none!important;width:34px;height:34px;color:#c5c5c5!important}
+header button:active,[class*="topbar"] button:active{background:#ffffff1a!important}
+
+/* activity bar */
+[class*="activity"]{background:var(--vs-act)!important;border-right:0!important;width:48px!important}
+[class*="activity"] button,[class*="activity"] [class*="item"]{
+  background:transparent!important;border:0!important;border-left:2px solid transparent!important;
+  border-radius:0!important;color:#858585!important}
+[class*="activity"] .active,[class*="activity"] [class*="active"]{
+  color:#fff!important;border-left-color:#fff!important}
+
+/* sidebar / explorer */
+[class*="sidebar"],[class*="explorer"]{background:var(--vs-side)!important;border-right:1px solid #1e1e1e!important}
+[class*="explorer"] [class*="title"],[class*="sidebar"] [class*="title"]{
+  font-size:11px!important;letter-spacing:.5px;text-transform:uppercase;color:#bbbbbb!important}
+[class*="tree"] [class*="item"],[class*="file-item"],[class*="explorer"] li{
+  min-height:26px!important;padding:2px 8px!important;border-radius:0!important;background:transparent!important}
+[class*="tree"] [class*="item"]:hover,[class*="file-item"]:hover{background:var(--vs-hover)!important}
+[class*="tree"] [class*="active"],[class*="file-item"][class*="active"],[class*="selected"]{
+  background:#04395e!important;color:#fff!important;outline:1px solid var(--vs-blue)!important;outline-offset:-1px}
+
+/* tab */
+[class*="tabs"],[class*="tabbar"]{background:var(--vs-side)!important;border-bottom:1px solid #252526!important}
+[class*="tab"]:not([class*="tabs"]):not([class*="tabbar"]){
+  background:var(--vs-tab)!important;color:var(--vs-dim)!important;border:0!important;
+  border-right:1px solid var(--vs-side)!important;border-radius:0!important;box-shadow:none!important}
+[class*="tab"][class*="active"]{
+  background:var(--vs-bg)!important;color:#fff!important;border-top:1px solid var(--vs-blue)!important}
+
+/* breadcrumb */
+[class*="breadcrumb"]{background:var(--vs-bg)!important;color:var(--vs-dim)!important;font-size:12px!important}
+
+/* editor */
+[class*="gutter"],[class*="line-numbers"],.cm-gutters{background:var(--vs-bg)!important;color:#858585!important;border:0!important}
+[class*="active-line"],.cm-activeLine{background:#ffffff0a!important}
+.cm-activeLineGutter{color:#c6c6c6!important;background:transparent!important}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#79797966}
+::-webkit-scrollbar-thumb:active{background:#bfbfbf66}
+
+/* status bar */
+footer,[class*="statusbar"],[class*="status-bar"]{
+  background:var(--vs-blue)!important;color:#fff!important;font-size:12px!important;min-height:22px!important}
+footer *,[class*="statusbar"] *,[class*="status-bar"] *{
+  background:transparent!important;border:0!important;color:#fff!important;border-radius:0!important}
+
+/* welcome / tombol besar jadi gaya link VS Code */
+[class*="welcome"]{background:var(--vs-bg)!important;text-align:left!important;
+  align-items:flex-start!important;padding:24px!important}
+[class*="welcome"] h1,[class*="welcome"] [class*="title"]{font-weight:300!important;font-size:26px!important}
+[class*="welcome"] button{
+  background:transparent!important;border:0!important;color:#3794ff!important;
+  box-shadow:none!important;padding:4px 0!important;text-align:left!important;justify-content:flex-start!important}
+[class*="welcome"] button:active{text-decoration:underline}
+[class*="recent"] [class*="item"]{color:#3794ff!important;background:transparent!important}
