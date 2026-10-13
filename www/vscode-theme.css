@@ -86,12 +86,19 @@ padding:5px 0!important;justify-content:flex-start!important;text-align:left!imp
 .ext-b.ext-p{background:#0e639c!important;color:#fff!important;border-radius:2px!important}
 .ext-tag{background:#4d4d4d!important;color:#fff!important;border-radius:10px!important}
 
-/* titik "belum disimpan" */
-.tab-item.dirty .tab-close,.tab-item.dirty [class*="close"]{font-size:0!important;position:relative}
-.tab-item.dirty .tab-close::after,.tab-item.dirty [class*="close"]::after{
-  content:"";position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px 0 0 -4px;
-  border-radius:50%;background:#c5c5c5}
-.tab-item.dirty.active .tab-close::after,.tab-item.dirty.active [class*="close"]::after{background:#fff}
 
 /* file binary redup */
 .file-item.file-binary{opacity:.55}
+
+/* tab: icon, titik dirty, close */
+.tab-item{display:flex!important;align-items:center;gap:6px;padding:0 8px 0 10px!important;min-height:35px}
+.tab-icon{display:inline-flex;width:16px;height:16px}
+.tab-name{font-size:13px!important;white-space:nowrap}
+.tab-dot{display:none!important;width:8px;height:8px;border-radius:50%;background:#c5c5c5;flex:none}
+.tab-item.dirty .tab-dot{display:inline-block!important}
+.tab-item.dirty.active .tab-dot{background:#fff}
+.tab-close{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:3px;
+  opacity:.6;flex:none}
+.tab-close svg{width:14px;height:14px}
+.tab-item.active .tab-close{opacity:1}
+.tab-close:active{background:#ffffff26}
