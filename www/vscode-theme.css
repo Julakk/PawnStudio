@@ -102,3 +102,35 @@ padding:5px 0!important;justify-content:flex-start!important;text-align:left!imp
 .tab-close svg{width:14px;height:14px}
 .tab-item.active .tab-close{opacity:1}
 .tab-close:active{background:#ffffff26}
+
+/* ===== EKSTENSI gaya VS Code ===== */
+.ext-box{background:#252526!important;color:#ccc!important;border:1px solid #454545!important;
+  border-radius:6px!important;box-shadow:0 4px 16px #0009!important;overflow:hidden}
+.ext-head{background:#252526!important;border-bottom:1px solid #3c3c3c!important;padding:10px 14px!important;
+  font-size:11px!important;font-weight:600!important;letter-spacing:.5px;text-transform:uppercase;color:#bbb!important}
+.ext-body{background:#252526!important;padding:0!important}
+.ext-foot{background:#252526!important;border-top:1px solid #3c3c3c!important;padding:8px 12px!important}
+.ext-x{background:transparent!important;border:0!important;color:#c5c5c5!important;border-radius:3px!important}
+.ext-x:active{background:#ffffff1f!important}
+.ext-msg{color:#858585!important;font-size:12px!important;padding:10px 14px!important}
+
+/* baris extension */
+.ext-row{display:flex!important;gap:10px;align-items:flex-start;padding:10px 14px!important;
+  background:transparent!important;border-bottom:1px solid #2b2b2b!important;border-radius:0!important}
+.ext-row:active{background:#2a2d2e!important}
+.ext-row.off{opacity:.5}
+.ext-info{flex:1;min-width:0}
+.ext-name{font-size:13px!important;font-weight:600!important;color:#e7e7e7!important}
+.ext-sub{font-size:12px!important;color:#9d9d9d!important;margin-top:2px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ext-tag{display:inline-block;background:#4d4d4d!important;color:#fff!important;font-size:10px!important;
+  padding:1px 6px!important;border-radius:10px!important;margin-left:6px;vertical-align:middle;font-weight:400}
+.ext-row.off .ext-tag{background:#5a5a5a!important}
+
+/* tombol */
+.ext-act{display:flex;gap:6px;align-items:center;flex:none}
+.ext-b{background:#3a3d41!important;color:#fff!important;border:0!important;border-radius:2px!important;
+  padding:4px 10px!important;font-size:12px!important;min-height:26px}
+.ext-b:active{background:#45494e!important}
+.ext-b.ext-p{background:#0e639c!important}
+.ext-b.ext-p:active{background:#1177bb!important}
