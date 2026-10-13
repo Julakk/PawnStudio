@@ -1016,3 +1016,21 @@ body:has(#v151-bar.show) #sidebar {
   user-select: text;
   -webkit-touch-callout: default;
 }
+
+/* v1.14.3 header explorer: 6 tombol tidak muat satu baris di sidebar 240px */
+#sidebar #sidebar-header {
+  height: auto;
+  min-height: 40px;
+  flex-wrap: wrap;
+  align-content: center;
+  row-gap: 4px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+#sidebar #sidebar-actions {
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  max-width: none;
+  gap: 6px;
+}

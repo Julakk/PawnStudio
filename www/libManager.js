@@ -210,13 +210,6 @@
     b.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>';
     b.addEventListener('click', open);
     ref.parentNode.insertBefore(b, ref.nextSibling);
-    // Header Explorer sempit: biar tombol boleh turun ke baris ke-2 dan tidak terpotong.
-    var p = ref.parentNode;
-    p.style.flexWrap = 'wrap';
-    p.style.minWidth = '0';
-    p.style.flex = '1 1 0';
-    p.style.justifyContent = 'flex-end';
-    p.style.rowGap = '6px';
     return true;
   }
 
