@@ -169,3 +169,36 @@ padding:5px 0!important;justify-content:flex-start!important;text-align:left!imp
 #btn-run svg,#btn-run svg *{fill:#89d185!important}
 #welcome-inner #welcome-recent-title{text-transform:none!important;font-size:16px!important;
   font-weight:400!important;letter-spacing:0!important}
+
+/* ===== EKSTENSI: layout Marketplace VS Code ===== */
+#ext-modal .ext-row{position:relative;display:grid!important;grid-template-columns:44px 1fr;
+  column-gap:12px;padding:10px 14px 10px 12px!important}
+#ext-modal .ext-row:active{background:#37373d!important}
+#ext-modal .ext-ico{grid-column:1;grid-row:1 / span 4;width:44px;height:44px;border-radius:4px;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#1e1e1e}
+#ext-modal .ext-row>:not(.ext-ico){grid-column:2;min-width:0}
+
+/* nama tebal + versi redup */
+#ext-modal .ext-name{display:flex!important;align-items:baseline;flex-wrap:wrap;gap:6px;
+  font-size:14px!important;font-weight:700!important;color:#e7e7e7!important}
+#ext-modal .ext-name>*:not(.ext-tag){font-weight:400!important;font-size:12px!important;color:#9d9d9d!important}
+#ext-modal .ext-tag{font-size:10px!important;background:#4d4d4d!important;color:#fff!important;
+  border-radius:10px!important;padding:1px 7px!important;margin:0!important}
+
+/* deskripsi dipotong 2 baris, penerbit tebal */
+#ext-modal .ext-sub{display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  overflow:hidden;white-space:normal!important;font-size:13px!important;color:#c0c0c0!important;
+  line-height:1.4;margin-top:3px!important}
+#ext-modal .ext-meta{font-size:12px;font-weight:600;color:#bbb;margin-top:3px}
+
+/* tombol kecil di kanan bawah */
+#ext-modal .ext-act{justify-content:flex-end!important;margin-top:6px!important}
+#ext-modal .ext-b{padding:2px 9px!important;min-height:22px!important;font-size:12px!important;
+  line-height:18px;border-radius:2px!important}
+#ext-modal .ext-b.ext-p{background:#388a34!important;color:#fff!important}
+#ext-modal .ext-b.ext-p:active{background:#2f7a2c!important}
+
+/* bintang hijau: ekstensi bawaan */
+#ext-modal .ext-row.builtin::before{content:"";position:absolute;left:0;top:0;width:0;height:0;
+  border-top:26px solid #388a34;border-right:26px solid transparent}
+#ext-modal .ext-row.builtin::after{content:"\2605";position:absolute;left:2px;top:0;font-size:10px;color:#fff;line-height:13px}
