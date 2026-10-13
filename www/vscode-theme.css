@@ -151,3 +151,15 @@ padding:5px 0!important;justify-content:flex-start!important;text-align:left!imp
 #ext-modal .ext-head{padding:10px 14px!important;border-bottom:1px solid #3c3c3c!important;
   font-size:11px!important;letter-spacing:.5px;text-transform:uppercase;color:#bbb!important}
 #ext-modal .ext-body{padding:0!important}
+
+/* ===== EKSTENSI: grid ikon + search ===== */
+#ext-modal .ext-search{padding:8px 12px!important;background:#252526;position:sticky;top:0;z-index:2}
+#ext-modal .ext-search input{width:100%;box-sizing:border-box;background:#3c3c3c!important;color:#ccc!important;
+  border:1px solid transparent!important;border-radius:2px!important;padding:6px 8px!important;font-size:13px!important;outline:none}
+#ext-modal .ext-search input:focus{border-color:#007fd4!important}
+#ext-modal .ext-search input::placeholder{color:#8c8c8c}
+
+#ext-modal .ext-row{display:grid!important;grid-template-columns:42px 1fr;column-gap:10px;align-items:start}
+#ext-modal .ext-ico{grid-column:1;grid-row:1 / span 3;width:42px;height:42px;border-radius:4px;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:#1e1e1e}
+#ext-modal .ext-row>:not(.ext-ico){grid-column:2}
