@@ -9,10 +9,17 @@ Semua perubahan penting pada project PawnStudio dicatat di file ini.
 - Panel Ekstensi (ikon puzzle di activity bar): snippet, tema editor, dan paket include dalam format JSON. Pasang dari file atau repo GitHub (`pawnstudio-extension.json`), aktif/nonaktif, hapus. Ekstensi hanya berisi data dan tidak menjalankan kode.
 - Ekstensi bawaan: SA-MP Snippets dan Tema Tambahan (Nord, Tokyo Night, Solarized Dark, GitHub Dark).
 - Dokumentasi format ekstensi: `docs/EXTENSIONS.md`.
+- Panel Ekstensi: kolom pencarian "Cari ekstensi" yang menyaring daftar saat mengetik, dan ikon kotak berwarna per ekstensi (`www/ext-vscode.js`).
 
 ### Diubah
 - Katalog Manajer Library: zcmd dan crashdetect memakai repo yang masih ada, I-ZCMD ditambahkan, a_mysql dipindah ke bawaan APK.
 - Backslash pada `#include` di library bawaan dinormalisasi agar YSI dkk compile di Android.
+- Tampilan seluruh app dibuat mirip VS Code (Dark+) lewat `www/vscode-theme.css`: warna editor, sidebar, activity bar, tab, breadcrumb, dan status bar biru.
+- Top bar: tombol jadi ikon polos tanpa kotak dan lebih rapat. Activity bar: penanda aktif berupa garis putih di kiri.
+- Explorer: header seksi bergaya VS Code, baris lebih rapat, garis panduan indentasi folder, tombol aksi baru muncul saat disentuh.
+- Tab: titik putih untuk file yang belum disimpan, tombol tutup lebih rapi.
+- Welcome screen: tombol bergaya link biru rata kiri, daftar Recent bergaya VS Code.
+- Panel Ekstensi, Pengaturan, dan panel Output mengikuti gaya VS Code (baris rapat, tombol biru kecil, tag berbentuk pil).
 
 ## [1.14.3] - 2026-10-13
 
