@@ -85,3 +85,13 @@ padding:5px 0!important;justify-content:flex-start!important;text-align:left!imp
 .ext-name{color:#e7e7e7!important}.ext-sub{color:var(--dim)!important}
 .ext-b.ext-p{background:#0e639c!important;color:#fff!important;border-radius:2px!important}
 .ext-tag{background:#4d4d4d!important;color:#fff!important;border-radius:10px!important}
+
+/* titik "belum disimpan" */
+.tab-item.dirty .tab-close,.tab-item.dirty [class*="close"]{font-size:0!important;position:relative}
+.tab-item.dirty .tab-close::after,.tab-item.dirty [class*="close"]::after{
+  content:"";position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px 0 0 -4px;
+  border-radius:50%;background:#c5c5c5}
+.tab-item.dirty.active .tab-close::after,.tab-item.dirty.active [class*="close"]::after{background:#fff}
+
+/* file binary redup */
+.file-item.file-binary{opacity:.55}
