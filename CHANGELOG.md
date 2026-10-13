@@ -2,6 +2,18 @@
 
 Semua perubahan penting pada project PawnStudio dicatat di file ini.
 
+## [1.15.0] - 2026-10-13
+
+### Ditambahkan
+- Include bawaan APK (tanpa perlu memasang): sscanf2, YSI, streamer, a_mysql, zcmd, I-ZCMD, Pawn.CMD, Pawn.RakNet, crashdetect, amx_assembly, weapon-config. Otomatis masuk jalur include compiler dengan prioritas paling bawah, jadi versi milik proyek tetap menang.
+- Panel Ekstensi (ikon puzzle di activity bar): snippet, tema editor, dan paket include dalam format JSON. Pasang dari file atau repo GitHub (`pawnstudio-extension.json`), aktif/nonaktif, hapus. Ekstensi hanya berisi data dan tidak menjalankan kode.
+- Ekstensi bawaan: SA-MP Snippets dan Tema Tambahan (Nord, Tokyo Night, Solarized Dark, GitHub Dark).
+- Dokumentasi format ekstensi: `docs/EXTENSIONS.md`.
+
+### Diubah
+- Katalog Manajer Library: zcmd dan crashdetect memakai repo yang masih ada, I-ZCMD ditambahkan, a_mysql dipindah ke bawaan APK.
+- Backslash pada `#include` di library bawaan dinormalisasi agar YSI dkk compile di Android.
+
 ## [1.14.3] - 2026-10-13
 
 ### Ditambahkan

@@ -8,11 +8,11 @@
     { id: 'sscanf', name: 'sscanf2', repo: 'Y-Less/sscanf', mode: 'release', desc: 'Parser input cepat: #include <sscanf2>.' },
     { id: 'ysi', name: 'YSI Includes', repo: 'Y-Less/YSI-Includes', mode: 'head', desc: 'y_hooks, y_timers, y_ini, dll. (besar, butuh waktu).' },
     { id: 'streamer', name: 'Streamer', repo: 'samp-incognito/samp-streamer-plugin', mode: 'release', desc: 'Object/pickup/checkpoint streamer: #include <streamer>.' },
-    { id: 'mysql', name: 'MySQL (a_mysql)', repo: 'pBlueG/SA-MP-MySQL', mode: 'release', desc: 'Plugin MySQL: #include <a_mysql>.' },
-    { id: 'zcmd', name: 'zcmd', repo: 'Zeex/zcmd', mode: 'head', desc: 'Command processor klasik: #include <zcmd>.' },
+    { id: 'zcmd', name: 'zcmd', repo: 'Southclaws/zcmd', mode: 'head', desc: 'Command processor klasik: #include <zcmd>.' },
+    { id: 'izcmd', name: 'I-ZCMD', repo: 'YashasSamaga/I-ZCMD', mode: 'head', desc: 'zcmd versi lebih cepat: #include <izcmd>.' },
     { id: 'pawncmd', name: 'Pawn.CMD', repo: 'katursis/Pawn.CMD', mode: 'release', desc: 'Command processor modern (versi omp).' },
     { id: 'pawnraknet', name: 'Pawn.RakNet', repo: 'katursis/Pawn.RakNet', mode: 'release', desc: 'Akses RakNet dari Pawn (versi omp).' },
-    { id: 'crashdetect', name: 'crashdetect', repo: 'Zeex/samp-plugin-crashdetect', mode: 'head', desc: 'Backtrace saat server crash.' },
+    { id: 'crashdetect', name: 'crashdetect', repo: 'AmyrAhmady/samp-plugin-crashdetect', mode: 'head', desc: 'Backtrace saat server crash (versi omp).' },
     { id: 'amx_assembly', name: 'amx_assembly', repo: 'Zeex/amx_assembly', mode: 'head', desc: 'Library dasar untuk banyak include lain.' },
     { id: 'weapon-config', name: 'weapon-config', repo: 'oscar-broman/samp-weapon-config', mode: 'head', desc: 'Sistem damage/senjata kustom.' }
   ];
@@ -194,6 +194,7 @@
       else if (act === 'add') addCustom();
       else if (act === 'forget') { setCustom(getCustom().filter(function (x) { return x !== id; })); render(); }
     });
+    state.msg = 'Include populer sudah bawaan APK. Menu ini untuk memasang/memperbarui versi lain ke proyek.';
     document.body.appendChild(root);
     render();
     reload().then(render);

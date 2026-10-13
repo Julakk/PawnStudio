@@ -182,6 +182,88 @@ public class PawnCompilerPlugin extends Plugin {
         }
     }
 
+    // ==================================================
+    // Library bawaan (v1.15.0): assets/pawno/lib/<id>/...
+    // ==================================================
+    private File libRootDir() {
+        File dir = new File(getContext().getFilesDir(), "pawno/lib");
+        if (!dir.exists()) dir.mkdirs();
+        return dir;
+    }
+
+    // Satu folder per library; tiap folder jadi satu -i (prioritas paling bawah).
+    private java.util.List<File> libIncludeDirs() {
+        java.util.List<File> out = new java.util.ArrayList<>();
+        try {
+            ensureLibIncludesExtracted();
+        } catch (Throwable t) {
+            return out;
+        }
+        File[] subs = libRootDir().listFiles();
+        if (subs == null) return out;
+        java.util.Arrays.sort(subs);
+        for (File f : subs) if (f.isDirectory()) out.add(f);
+        return out;
+    }
+
+    private String readAssetText(String path) {
+        try (InputStream in = getContext().getAssets().open(path)) {
+            java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = in.read(buf)) != -1) bos.write(buf, 0, n);
+            return bos.toString("UTF-8");
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void copyAssetTree(String assetPath, File dest) throws Exception {
+        if (assetPath.equals("pawno/lib/index.json")) return; // ditulis terakhir sebagai penanda selesai
+        String[] kids = getContext().getAssets().list(assetPath);
+        if (kids != null && kids.length > 0) {
+            if (!dest.exists()) dest.mkdirs();
+            for (String k : kids) copyAssetTree(assetPath + "/" + k, new File(dest, k));
+            return;
+        }
+        File parent = dest.getParentFile();
+        if (parent != null && !parent.exists()) parent.mkdirs();
+        try (InputStream in = getContext().getAssets().open(assetPath);
+             FileOutputStream out = new FileOutputStream(dest)) {
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = in.read(buf)) != -1) out.write(buf, 0, n);
+        }
+    }
+
+    private void deleteTree(File f) {
+        if (f.isDirectory()) {
+            File[] kids = f.listFiles();
+            if (kids != null) for (File c : kids) deleteTree(c);
+        }
+        f.delete();
+    }
+
+    // Salin library bawaan sekali saja; salin ulang hanya kalau index.json di APK berubah.
+    private void ensureLibIncludesExtracted() throws Exception {
+        String bundled = readAssetText("pawno/lib/index.json");
+        if (bundled == null) return; // APK tanpa library bawaan
+        File root = libRootDir();
+        File marker = new File(root, "index.json");
+        if (marker.exists()) {
+            try {
+                String cur = new String(java.nio.file.Files.readAllBytes(marker.toPath()), "UTF-8");
+                if (cur.equals(bundled)) return;
+            } catch (Throwable ignore) { }
+        }
+        deleteTree(root);
+        root.mkdirs();
+        copyAssetTree("pawno/lib", root);
+        try (FileOutputStream out = new FileOutputStream(marker)) {
+            out.write(bundled.getBytes("UTF-8"));
+        }
+    }
+
     private String readStream(InputStream is) throws Exception {
         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
         StringBuilder sb = new StringBuilder();
@@ -784,6 +866,7 @@ public class PawnCompilerPlugin extends Plugin {
             allRoots.addAll(mirrorDirs);
             allRoots.add(includeDir());
             allRoots.add(extraIncludeDir());
+            allRoots.addAll(libIncludeDirs());
             if (ompMode) allRoots.add(ompIncludeDir());
 
             java.util.List<String> cmdArgs = new java.util.ArrayList<>();
@@ -807,6 +890,7 @@ public class PawnCompilerPlugin extends Plugin {
                 }
             // Paling akhir: include bawaan cadangan (kalah prioritas sama project)
             cmdArgs.add("-i" + extraIncludeDir().getAbsolutePath());
+            for (File libDir : libIncludeDirs()) cmdArgs.add("-i" + libDir.getAbsolutePath());
             // Flag tambahan dari user (whitelist ketat, tanpa -i/-o/-e/@file)
             int flagCount = 0;
             for (String tok : userFlags.trim().split("\\s+")) {
@@ -829,6 +913,7 @@ public class PawnCompilerPlugin extends Plugin {
             java.util.Set<File> trustedDirs = new java.util.HashSet<>();
             trustedDirs.add(includeDir());
             trustedDirs.add(extraIncludeDir());
+            trustedDirs.addAll(libIncludeDirs());
             if (ompMode) trustedDirs.add(ompIncludeDir());
             int preFixed = preScanAndFix(sourceCode, relativeFilePath, allRoots, trustedDirs);
             if (preFixed > 0) autoFixed.add("(" + preFixed + " path dibenerin lewat pre-scan sebelum compile)");
