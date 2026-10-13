@@ -1,97 +1,87 @@
-/* PawnStudio - tema VS Code Dark+ */
-:root{
-  --vs-bg:#1e1e1e; --vs-side:#252526; --vs-act:#333333;
-  --vs-tab:#2d2d2d; --vs-sel:#37373d; --vs-hover:#2a2d2e;
-  --vs-border:#3c3c3c; --vs-text:#cccccc; --vs-dim:#858585;
-  --vs-blue:#007acc; --vs-title:#323233;
-}
-html,body{background:var(--vs-bg)!important;color:var(--vs-text)!important;
-  font-family:-apple-system,"Segoe UI",Roboto,sans-serif;font-size:13px}
+/* PawnStudio - VS Code Dark+ (presisi) */
+:root{--bg:#1e1e1e;--side:#252526;--act:#333;--tab:#2d2d2d;--hover:#2a2d2e;
+--bd:#3c3c3c;--tx:#ccc;--dim:#858585;--blue:#007acc;--title:#323233}
+html,body,#app{background:var(--bg)!important;color:var(--tx)!important;
+font-family:-apple-system,"Segoe UI",Roboto,sans-serif;font-size:13px}
 
-/* top bar: rata, ikon polos tanpa kotak */
-header,[class*="topbar"],[class*="titlebar"],[class*="appbar"]{
-  background:var(--vs-title)!important;border-bottom:1px solid #252526!important;
-  min-height:38px!important;padding:0 6px!important}
-header button,[class*="topbar"] button,[class*="titlebar"] button,[class*="appbar"] button{
-  background:transparent!important;border:0!important;border-radius:4px!important;
-  box-shadow:none!important;width:34px;height:34px;color:#c5c5c5!important}
-header button:active,[class*="topbar"] button:active{background:#ffffff1a!important}
+/* top bar: ikon polos */
+#topbar{background:var(--title)!important;border-bottom:1px solid #252526!important;min-height:38px!important;padding:0 4px!important}
+#app-title{font-size:13px!important;font-weight:400!important;color:#ccc!important}
+#topbar button,#topbar-actions button{background:transparent!important;border:0!important;
+box-shadow:none!important;border-radius:4px!important;width:34px!important;height:34px!important;color:#c5c5c5!important}
+#topbar button:active{background:#ffffff1f!important}
+#btn-run{color:#89d185!important}
 
 /* activity bar */
-[class*="activity"]{background:var(--vs-act)!important;border-right:0!important;width:48px!important}
-[class*="activity"] button,[class*="activity"] [class*="item"]{
-  background:transparent!important;border:0!important;border-left:2px solid transparent!important;
-  border-radius:0!important;color:#858585!important}
-[class*="activity"] .active,[class*="activity"] [class*="active"]{
-  color:#fff!important;border-left-color:#fff!important}
+#activity-bar{background:var(--act)!important;border:0!important;width:48px!important}
+.activity-btn{width:48px!important;height:48px!important;background:transparent!important;border:0!important;
+border-left:2px solid transparent!important;border-radius:0!important;color:#858585!important;box-shadow:none!important}
+.activity-btn.active{color:#fff!important;border-left-color:#fff!important}
 
 /* sidebar / explorer */
-[class*="sidebar"],[class*="explorer"]{background:var(--vs-side)!important;border-right:1px solid #1e1e1e!important}
-[class*="explorer"] [class*="title"],[class*="sidebar"] [class*="title"]{
-  font-size:11px!important;letter-spacing:.5px;text-transform:uppercase;color:#bbbbbb!important}
-[class*="tree"] [class*="item"],[class*="file-item"],[class*="explorer"] li{
-  min-height:26px!important;padding:2px 8px!important;border-radius:0!important;background:transparent!important}
-[class*="tree"] [class*="item"]:hover,[class*="file-item"]:hover{background:var(--vs-hover)!important}
-[class*="tree"] [class*="active"],[class*="file-item"][class*="active"],[class*="selected"]{
-  background:#04395e!important;color:#fff!important;outline:1px solid var(--vs-blue)!important;outline-offset:-1px}
-
-/* tab */
-[class*="tabs"],[class*="tabbar"]{background:var(--vs-side)!important;border-bottom:1px solid #252526!important}
-[class*="tab"]:not([class*="tabs"]):not([class*="tabbar"]){
-  background:var(--vs-tab)!important;color:var(--vs-dim)!important;border:0!important;
-  border-right:1px solid var(--vs-side)!important;border-radius:0!important;box-shadow:none!important}
-[class*="tab"][class*="active"]{
-  background:var(--vs-bg)!important;color:#fff!important;border-top:1px solid var(--vs-blue)!important}
-
-/* breadcrumb */
-[class*="breadcrumb"]{background:var(--vs-bg)!important;color:var(--vs-dim)!important;font-size:12px!important}
-
-/* editor */
-[class*="gutter"],[class*="line-numbers"],.cm-gutters{background:var(--vs-bg)!important;color:#858585!important;border:0!important}
-[class*="active-line"],.cm-activeLine{background:#ffffff0a!important}
-.cm-activeLineGutter{color:#c6c6c6!important;background:transparent!important}
-::-webkit-scrollbar{width:10px;height:10px}
-::-webkit-scrollbar-thumb{background:#79797966}
-::-webkit-scrollbar-thumb:active{background:#bfbfbf66}
-
-/* status bar */
-footer,[class*="statusbar"],[class*="status-bar"]{
-  background:var(--vs-blue)!important;color:#fff!important;font-size:12px!important;min-height:22px!important}
-footer *,[class*="statusbar"] *,[class*="status-bar"] *{
-  background:transparent!important;border:0!important;color:#fff!important;border-radius:0!important}
-
-/* welcome / tombol besar jadi gaya link VS Code */
-[class*="welcome"]{background:var(--vs-bg)!important;text-align:left!important;
-  align-items:flex-start!important;padding:24px!important}
-[class*="welcome"] h1,[class*="welcome"] [class*="title"]{font-weight:300!important;font-size:26px!important}
-[class*="welcome"] button{
-  background:transparent!important;border:0!important;color:#3794ff!important;
-  box-shadow:none!important;padding:4px 0!important;text-align:left!important;justify-content:flex-start!important}
-[class*="welcome"] button:active{text-decoration:underline}
-[class*="recent"] [class*="item"]{color:#3794ff!important;background:transparent!important}
-
-/* ===== class asli PawnStudio ===== */
-.activity-btn{width:48px!important;height:48px!important;background:transparent!important;
-  border:0!important;border-left:2px solid transparent!important;border-radius:0!important;
-  color:#858585!important;box-shadow:none!important}
-.activity-btn.active{color:#fff!important;border-left-color:#fff!important}
-.activity-spacer{flex:1}
-
+#sidebar{background:var(--side)!important;border-right:1px solid #1e1e1e!important}
+#sidebar-header,#open-editors-header,#explorer-root-header{background:var(--side)!important;
+font-size:11px!important;letter-spacing:.5px;text-transform:uppercase;color:#bbb!important;font-weight:600!important}
+#sidebar-actions button{background:transparent!important;border:0!important;border-radius:3px!important;color:#c5c5c5!important}
+#sidebar-actions button:active{background:#ffffff1f!important}
+.file-item,.folder-item,.open-editor-item,.welcome-recent-item{min-height:26px!important;border-radius:0!important;
+background:transparent!important;padding-top:2px!important;padding-bottom:2px!important}
+.file-item:hover,.folder-item:hover,.open-editor-item:hover{background:var(--hover)!important}
+#file-tree .active,#file-tree .selected,.open-editor-item.active{background:#04395e!important;color:#fff!important;
+outline:1px solid var(--blue)!important;outline-offset:-1px}
+.folder-children{margin-left:8px!important;border-left:1px solid #404040!important}
 .entry-name,.name{font-size:13px!important;color:#ccc!important}
 .item-actions{opacity:0;transition:opacity .15s}
-*:hover>.item-actions,*:active>.item-actions,.item-actions:focus-within{opacity:1}
+*:hover>.item-actions,.item-actions:focus-within{opacity:1}
 .btn-more,.btn-rename,.btn-delete{background:transparent!important;border:0!important;color:#c5c5c5!important;
-  width:26px;height:26px;border-radius:3px!important}
-.btn-more:active,.btn-rename:active,.btn-delete:active{background:#ffffff1a!important}
+width:26px;height:26px;border-radius:3px!important}
 
-.welcome-btn{background:transparent!important;border:0!important;box-shadow:none!important;
-  color:#3794ff!important;padding:4px 0!important;justify-content:flex-start!important;text-align:left!important}
+/* tab + breadcrumb */
+#tabbar{background:var(--side)!important;border-bottom:1px solid #252526!important}
+.tab-item{background:var(--tab)!important;color:var(--dim)!important;border:0!important;
+border-right:1px solid var(--side)!important;border-top:1px solid transparent!important;border-radius:0!important;box-shadow:none!important}
+.tab-item.active{background:var(--bg)!important;color:#fff!important;border-top-color:var(--blue)!important}
+#breadcrumb{background:var(--bg)!important;color:var(--dim)!important;font-size:12px!important;border:0!important}
+
+/* editor */
+#editor-area,#editor-container{background:var(--bg)!important}
+.cm-gutters{background:var(--bg)!important;color:#858585!important;border:0!important}
+.cm-activeLine{background:#ffffff0a!important}
+.cm-activeLineGutter{color:#c6c6c6!important;background:transparent!important}
+#symbol-bar{background:var(--side)!important;border-top:1px solid var(--bd)!important}
+#symbol-bar button{background:#3c3c3c!important;color:#ccc!important;border:0!important;border-radius:3px!important}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#79797966}
+
+/* output panel */
+#output-panel{background:var(--bg)!important;border-top:1px solid var(--bd)!important}
+#output-panel-header{background:var(--bg)!important;font-size:11px!important;text-transform:uppercase;letter-spacing:.5px;color:#bbb!important}
+#output-panel-body{font-family:Consolas,"Courier New",monospace!important;font-size:12px!important}
+
+/* status bar */
+#statusbar{background:var(--blue)!important;color:#fff!important;min-height:22px!important;font-size:12px!important}
+#statusbar *{background:transparent!important;border:0!important;color:#fff!important;border-radius:0!important}
+#statusbar-left>*,#statusbar-right>*{padding:0 8px!important}
+#statusbar-left>*:active,#statusbar-right>*:active{background:#ffffff2e!important}
+
+/* welcome: gaya VS Code */
+#welcome-screen{background:var(--bg)!important;align-items:flex-start!important;justify-content:flex-start!important}
+#welcome-inner{text-align:left!important;align-items:flex-start!important;padding:28px 24px!important;width:100%}
+#welcome-inner h1,#app-title+*{font-weight:300!important}
+#welcome-actions{flex-direction:column!important;align-items:flex-start!important;gap:2px!important}
+.welcome-btn{background:transparent!important;border:0!important;box-shadow:none!important;color:#3794ff!important;
+padding:5px 0!important;justify-content:flex-start!important;text-align:left!important}
 .welcome-btn:active{text-decoration:underline}
-.welcome-subtitle{color:#858585!important;font-size:13px!important}
+.welcome-subtitle{color:var(--dim)!important;font-size:13px!important}
+#welcome-recent-title{color:#ccc!important;font-size:16px!important;font-weight:400!important;text-transform:none!important}
+.welcome-recent-item{color:#3794ff!important}
 
-.setting-row{background:transparent!important;border-bottom:1px solid #3c3c3c!important;border-radius:0!important;padding:10px 12px!important}
-.sp-head{font-size:11px!important;letter-spacing:.5px;text-transform:uppercase;color:#bbb!important}
+/* settings + extensions + panel v151 */
+#settings-modal{background:var(--side)!important;border:1px solid var(--bd)!important;border-radius:6px!important}
+#settings-header{background:var(--side)!important;border-bottom:1px solid var(--bd)!important}
+.setting-row{background:transparent!important;border-bottom:1px solid var(--bd)!important;border-radius:0!important}
+.sp-head,.v151-head{font-size:11px!important;text-transform:uppercase;letter-spacing:.5px;color:#bbb!important}
 .ext-row{background:transparent!important;border-bottom:1px solid #2b2b2b!important;border-radius:0!important}
-.ext-name{color:#e7e7e7!important}.ext-sub{color:#858585!important}
+.ext-name{color:#e7e7e7!important}.ext-sub{color:var(--dim)!important}
 .ext-b.ext-p{background:#0e639c!important;color:#fff!important;border-radius:2px!important}
 .ext-tag{background:#4d4d4d!important;color:#fff!important;border-radius:10px!important}
