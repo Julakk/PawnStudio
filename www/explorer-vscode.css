@@ -1,0 +1,16 @@
+/* PawnStudio - Explorer ala VS Code */
+#open-editors-header, #explorer-root-header { cursor: pointer; -webkit-user-select: none; user-select: none; }
+#open-editors-header::before { content: "\25BE"; display: inline-block; width: 14px; }
+#open-editors-header.collapsed::before { content: "\25B8"; }
+#open-editors-list.oe-hidden { display: none; }
+.open-editor-item { padding-left: 8px; }
+.open-editor-item .oe-close { order: -1; margin-right: 2px; }
+.open-editor-item .oe-name { flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.open-editor-item .oe-dir { flex: 1 1 0; min-width: 0; margin-left: 6px; font-size: 11px; opacity: .55; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#explorer-root-header { display: flex; align-items: center; gap: 2px; padding: 4px 8px; font-size: 11px; font-weight: 700; letter-spacing: .4px; color: #cccccc; background: rgba(128,128,128,.14); }
+#explorer-root-header::before { content: "\25BE"; display: inline-block; width: 14px; }
+#explorer-root-header.collapsed::before { content: "\25B8"; }
+#explorer-root-header .erh-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: uppercase; }
+#explorer-root-header button { background: none; border: 0; color: inherit; padding: 4px; display: inline-flex; opacity: .85; }
+#explorer-root-header button:active { background: rgba(128,128,128,.3); }
+#file-tree.erh-hidden { display: none; }
