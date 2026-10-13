@@ -2,6 +2,14 @@
 
 Semua perubahan penting pada project PawnStudio dicatat di file ini.
 
+## [1.14.3] - 2026-10-13
+
+### Ditambahkan
+- Manajer Library / Include: tombol buku di header Explorer. Pasang include dari GitHub langsung ke `pawno/include` proyek aktif (SA-MP stdlib, sscanf2, YSI, Streamer, MySQL, zcmd, Pawn.CMD, Pawn.RakNet, crashdetect, amx_assembly, weapon-config).
+- Repo kustom (`owner/repo`) untuk memasang include dari repo mana pun.
+- Cek pembaruan dan Hapus per library; versi tercatat di `pawno/.pawnstudio-libs.json`.
+- Hanya file `.inc` yang diekstrak (folder test/example/docs dilewati) dan struktur folder library dipertahankan.
+
 ## [1.14.2] - 2026-10-13
 
 ### Fixed
