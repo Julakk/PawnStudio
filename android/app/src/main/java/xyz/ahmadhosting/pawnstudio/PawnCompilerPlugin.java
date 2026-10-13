@@ -890,7 +890,7 @@ public class PawnCompilerPlugin extends Plugin {
                 }
             // Paling akhir: include bawaan cadangan (kalah prioritas sama project)
             cmdArgs.add("-i" + extraIncludeDir().getAbsolutePath());
-            for (File libDir : libIncludeDirs()) cmdArgs.add("-i" + libDir.getAbsolutePath());
+            for (File incDir : libIncludeDirs()) cmdArgs.add("-i" + incDir.getAbsolutePath());
             // Flag tambahan dari user (whitelist ketat, tanpa -i/-o/-e/@file)
             int flagCount = 0;
             for (String tok : userFlags.trim().split("\\s+")) {
