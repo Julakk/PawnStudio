@@ -6,6 +6,8 @@ Semua perubahan penting pada project PawnStudio dicatat di file ini.
 
 ### Ditambahkan
 
+- Dukungan input() di Python lewat dialog input (isi semua nilai, pisahkan dengan |).
+- Pesan error yang jelas kalau import library non-stdlib (tidak tersedia offline).
 - Dukungan Python (.py): file .py dikenali sebagai bahasa Python di editor lengkap dengan syntax highlighting.
 - Jalankan Python langsung di app (Python 3.12 lewat Pyodide, tanpa internet) dengan tombol Run di top bar atau tombol mengambang "Run Python".
 - Panel Python Output: hasil print, error berwarna merah, tombol Stop, Clear, dan tutup. Menampilkan durasi eksekusi di akhir.

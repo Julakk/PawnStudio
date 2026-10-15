@@ -75,7 +75,13 @@
     if (!worker) startWorker();
     t0 = Date.now();
     setRunning(true);
-    worker.postMessage({ code: ed.getValue() });
+    var code = ed.getValue(), stdin = [];
+    if (/\binput\s*\(/.test(code)) {
+      var ans = window.prompt('Program memakai input(). Isi semua input, pisahkan dengan |  (contoh: Ahmad|17)', '');
+      if (ans === null) { setRunning(false); return; }
+      stdin = ans === '' ? [] : ans.split('|');
+    }
+    worker.postMessage({ code: code, stdin: stdin });
   }
   function stop() {
     if (!running) return;

@@ -31,6 +31,7 @@ Dibangun pakai HTML, CSS, dan JavaScript murni, dibungkus jadi APK Android lewat
 - **Preview HTML/CSS/JS**: live preview, mode split, gambar lokal, dan `console.log` tampil di panel Output
 - **Pilihan versi SA-MP**: `0.3.DL-R1`, `0.3.7-R2-1`, atau `0.3.7-R3`, supaya fungsi khusus DL langsung error saat compile kalau targetnya 0.3.7
 - **Pengaturan**: tema editor (Monokai, Dracula, One Dark, AMOLED, Light), ukuran font, dan flag compiler tambahan
+- **Python offline** — file `.py` bisa langsung dijalankan di app (Pyodide 3.12), lengkap dengan panel output dan tombol Stop
 - **Auto build APK**: tiap push ke `main`, GitHub Actions otomatis build APK dan bikin Release
 
 ## 📦 Struktur Proyek
