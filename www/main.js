@@ -105,6 +105,7 @@ function initEditor() {
 
 function getLanguageForFile(filename) {
   if (filename.endsWith(".pwn") || filename.endsWith(".inc")) return "pawn";
+  if (filename.toLowerCase().endsWith(".py")) return "python";
   if (/\.(js|mjs|cjs)$/.test(filename)) return "javascript";
   if (filename.endsWith(".ts")) return "typescript";
   if (filename.endsWith(".json")) return "json";
