@@ -76,6 +76,7 @@
   }
 
   btn.onclick = run;
+  window.psPyRun = function () { if (running) stop(); else run(); };
   stopBtn.onclick = stop;
   clearBtn.onclick = function () { out.textContent = ''; };
   closeBtn.onclick = function () { panel.style.display = 'none'; };

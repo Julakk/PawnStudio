@@ -107,6 +107,7 @@
     }
 
     kind = k;
+    cleanup();
     showOutputPanel();
     setOutputLines([{ text: '$ ' + label, type: 'info' }]);
     buf = '';
@@ -208,6 +209,7 @@
       ]);
       return true;
     }
+    if (/\.py$/i.test(path || '') && window.psPyRun) { window.psPyRun(); return true; }
     if (!isNodeFile(path)) return false;
     if (running) { stop(); return true; }
     startNode(path);
