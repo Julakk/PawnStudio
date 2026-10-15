@@ -97,7 +97,7 @@ APK di-build otomatis lewat GitHub Actions tiap kali push ke branch `main`. Hasi
 - [x] Preview HTML/CSS/JS
 - [x] Cari & Ganti di semua file
 - [x] Pilihan versi SA-MP dan flag compiler tambahan
-- [x] Jalankan Python offline (Pyodide) + panel output, input() lewat dialog
+- [x] Jalankan Python offline (Pyodide) + panel output, Run langsung tanpa dialog
 
 ## 🔒 Catatan Keamanan
 

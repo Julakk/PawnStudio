@@ -33,7 +33,7 @@ async function init() {
   });
   py.setStdout({ batched: function (s) { postMessage({ t: 'out', s: s }); } });
   py.setStderr({ batched: function (s) { postMessage({ t: 'err', s: s }); } });
-  py.setStdin({ stdin: function () { return queue.length ? queue.shift() : undefined; } });
+  py.setStdin({ stdin: function () { return queue.length ? queue.shift() : '\n'; } });
   return py;
 }
 

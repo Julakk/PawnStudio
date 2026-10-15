@@ -10,7 +10,7 @@ Semua perubahan penting pada project PawnStudio dicatat di file ini.
 - Jalankan Python langsung di app (Python 3.12 lewat Pyodide 0.26.4, tanpa internet) dengan tombol Run di top bar atau tombol mengambang "Run Python".
 - Panel Python Output: hasil print, error berwarna merah, tombol Stop, Clear, dan tutup. Menampilkan durasi eksekusi di akhir.
 - Python berjalan di Web Worker, jadi editor tidak macet dan kode yang menggantung (misalnya while True) bisa dihentikan dengan Stop.
-- Dukungan input() lewat dialog input: isi semua nilai sekaligus, pisahkan dengan tanda |.
+- Tombol Run langsung menjalankan kode tanpa dialog. input() menerima baris kosong, jadi program tidak berhenti dengan EOFError.
 - Pesan error yang jelas saat import library non-stdlib (hanya modul bawaan Python yang tersedia offline).
 - Pyodide ikut dibundel ke APK otomatis lewat GitHub Actions (ukuran APK bertambah sekitar 10 MB).
 
