@@ -106,6 +106,6 @@
     }
     var ed = getEditor();
     var py = ed && isPy(ed.getModel());
-    btn.style.display = (py && panel.style.display === 'none') ? 'block' : 'none';
+    btn.style.display = 'none';
   }, 600);
 })();
