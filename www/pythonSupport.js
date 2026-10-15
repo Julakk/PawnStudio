@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  var worker = null, running = false;
+  var worker = null, running = false, t0 = 0;
 
   function el(tag, css, text) {
     var e = document.createElement(tag);
@@ -13,24 +13,26 @@
   var panel = el('div', 'position:fixed;left:0;right:0;bottom:0;height:40%;z-index:9999;display:none;flex-direction:column;background:#1e1e1e;color:#ddd;border-top:2px solid #3fb950;font-family:monospace;font-size:13px');
   var bar = el('div', 'display:flex;gap:8px;align-items:center;padding:6px 10px;background:#252526');
   var title = el('span', 'flex:1;font-weight:700', 'Python Output');
-  var stopBtn = el('button', 'padding:4px 10px', '\u25A0 Stop');
+  var stopBtn = el('button', 'padding:4px 10px;opacity:0.4', '\u25A0 Stop');
   var clearBtn = el('button', 'padding:4px 10px', 'Clear');
   var closeBtn = el('button', 'padding:4px 10px', 'X');
   var out = el('pre', 'flex:1;margin:0;padding:8px 10px;overflow:auto;white-space:pre-wrap;word-break:break-word');
+  stopBtn.disabled = true;
   bar.appendChild(title); bar.appendChild(stopBtn); bar.appendChild(clearBtn); bar.appendChild(closeBtn);
   panel.appendChild(bar); panel.appendChild(out);
   document.body.appendChild(btn);
   document.body.appendChild(panel);
 
   function log(text, color) {
-    var s = el('span', color ? 'color:' + color : '', text);
-    out.appendChild(s);
+    out.appendChild(el('span', color ? 'color:' + color : '', text));
     out.scrollTop = out.scrollHeight;
   }
   function setRunning(v) {
     running = v;
     btn.textContent = v ? '\u23F3 Running...' : '\u25B6 Run Python';
     btn.style.opacity = v ? '0.6' : '1';
+    stopBtn.disabled = !v;
+    stopBtn.style.opacity = v ? '1' : '0.4';
   }
   function startWorker() {
     worker = new Worker('pythonWorker.js');
@@ -39,10 +41,15 @@
       if (m.t === 'out') log(m.s + '\n');
       else if (m.t === 'err') log(m.s + '\n', '#f85149');
       else if (m.t === 'status') log(m.s + '\n', '#8b949e');
-      else if (m.t === 'done') setRunning(false);
+      else if (m.t === 'start') t0 = Date.now();
+      else if (m.t === 'done') {
+        log('[Selesai, ' + ((Date.now() - t0) / 1000).toFixed(1) + 's]\n', '#8b949e');
+        setRunning(false);
+      }
     };
     worker.onerror = function (e) {
       log('Worker error: ' + (e.message || e) + '\n', '#f85149');
+      if (worker) { worker.terminate(); worker = null; }
       setRunning(false);
     };
   }
@@ -66,12 +73,14 @@
     panel.style.display = 'flex';
     out.textContent = '';
     if (!worker) startWorker();
+    t0 = Date.now();
     setRunning(true);
     worker.postMessage({ code: ed.getValue() });
   }
   function stop() {
+    if (!running) return;
     if (worker) { worker.terminate(); worker = null; }
-    if (running) log('[dihentikan]\n', '#d29922');
+    log('[dihentikan]\n', '#d29922');
     setRunning(false);
   }
 
@@ -92,6 +101,7 @@
       });
     }
     var ed = getEditor();
-    btn.style.display = (ed && isPy(ed.getModel())) ? 'block' : 'none';
+    var py = ed && isPy(ed.getModel());
+    btn.style.display = (py && panel.style.display === 'none') ? 'block' : 'none';
   }, 600);
 })();

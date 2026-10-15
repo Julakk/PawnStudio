@@ -1,10 +1,27 @@
-## v1.15.1
-- Tambah dukungan Python (.py): editor + bisa dijalankan (Pyodide)
-- Perbaikan bug
-
 # Changelog
 
 Semua perubahan penting pada project PawnStudio dicatat di file ini.
+
+## [1.15.1] - 2026-10-16
+
+### Ditambahkan
+
+- Dukungan Python (.py): file .py dikenali sebagai bahasa Python di editor lengkap dengan syntax highlighting.
+- Jalankan Python langsung di app (Python 3.12 lewat Pyodide, tanpa internet) dengan tombol Run di top bar atau tombol mengambang "Run Python".
+- Panel Python Output: hasil print, error berwarna merah, tombol Stop, Clear, dan tutup. Menampilkan durasi eksekusi di akhir.
+- Python berjalan di Web Worker, jadi editor tidak macet dan kode yang menggantung (misalnya while True) bisa dihentikan dengan Stop.
+- Pyodide ikut dibundel ke APK otomatis lewat GitHub Actions (ukuran APK bertambah sekitar 10 MB).
+
+### Diubah
+
+- Traceback Python hanya menampilkan baris dari kode pengguna, tanpa baris internal Pyodide.
+- Tombol Run mengambang disembunyikan saat panel Python Output terbuka. Tombol Stop nonaktif kalau tidak ada proses berjalan.
+- Versi aplikasi naik ke 1.15.1 (versionCode 47).
+
+### Catatan
+
+- Run Python pertama butuh beberapa detik untuk memuat Pyodide. Run berikutnya langsung jalan.
+- input() belum didukung.
 
 ## [1.15.0] - 2026-10-13
 
