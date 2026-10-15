@@ -1,3 +1,7 @@
+## v1.15.1
+- Tambah dukungan Python (.py): editor + bisa dijalankan (Pyodide)
+- Perbaikan bug
+
 # Changelog
 
 Semua perubahan penting pada project PawnStudio dicatat di file ini.

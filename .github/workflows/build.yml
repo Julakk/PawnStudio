@@ -33,6 +33,18 @@ jobs:
       - name: Add Android platform (if not exists)
         run: npx cap add android || true
 
+      - name: Siapkan Pyodide (Python runtime)
+        run: |
+          mkdir -p nodebuild/py www/vendor/pyodide
+          cd nodebuild/py
+          npm pack pyodide@0.26.4 --silent
+          tar xzf pyodide-0.26.4.tgz
+          cd ../..
+          for x in pyodide.js pyodide.asm.js pyodide.asm.wasm python_stdlib.zip pyodide-lock.json; do
+            cp nodebuild/py/package/$x www/vendor/pyodide/
+          done
+          ls -la www/vendor/pyodide
+
       - name: Sync Capacitor
         run: npx cap sync android
 
