@@ -6,24 +6,20 @@ Semua perubahan penting pada project PawnStudio dicatat di file ini.
 
 ### Ditambahkan
 
-- Dukungan input() di Python lewat dialog input (isi semua nilai, pisahkan dengan |).
-- Pesan error yang jelas kalau import library non-stdlib (tidak tersedia offline).
-- Dukungan Python (.py): file .py dikenali sebagai bahasa Python di editor lengkap dengan syntax highlighting.
-- Jalankan Python langsung di app (Python 3.12 lewat Pyodide, tanpa internet) dengan tombol Run di top bar atau tombol mengambang "Run Python".
+- Dukungan Python (.py): file .py dikenali sebagai bahasa Python di editor lengkap dengan syntax highlighting dan indentasi 4 spasi.
+- Jalankan Python langsung di app (Python 3.12 lewat Pyodide 0.26.4, tanpa internet) dengan tombol Run di top bar atau tombol mengambang "Run Python".
 - Panel Python Output: hasil print, error berwarna merah, tombol Stop, Clear, dan tutup. Menampilkan durasi eksekusi di akhir.
 - Python berjalan di Web Worker, jadi editor tidak macet dan kode yang menggantung (misalnya while True) bisa dihentikan dengan Stop.
+- Dukungan input() lewat dialog input: isi semua nilai sekaligus, pisahkan dengan tanda |.
+- Pesan error yang jelas saat import library non-stdlib (hanya modul bawaan Python yang tersedia offline).
 - Pyodide ikut dibundel ke APK otomatis lewat GitHub Actions (ukuran APK bertambah sekitar 10 MB).
 
 ### Diubah
 
 - Traceback Python hanya menampilkan baris dari kode pengguna, tanpa baris internal Pyodide.
 - Tombol Run mengambang disembunyikan saat panel Python Output terbuka. Tombol Stop nonaktif kalau tidak ada proses berjalan.
+- README: tambah fitur Python dan item roadmap Python.
 - Versi aplikasi naik ke 1.15.1 (versionCode 47).
-
-### Catatan
-
-- Run Python pertama butuh beberapa detik untuk memuat Pyodide. Run berikutnya langsung jalan.
-- input() belum didukung.
 
 ## [1.15.0] - 2026-10-13
 
