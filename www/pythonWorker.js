@@ -14,6 +14,9 @@ function clean(msg) {
     }
   }
   if (msg.indexOf('ModuleNotFoundError') >= 0) {
+    res = res.split('\n').filter(function (l) {
+      return l.indexOf("The module '") !== 0 && l.indexOf('You can install it') !== 0 && l.indexOf('await ') < 0 && l.indexOf('See https://pyodide') !== 0;
+    }).join('\n');
     res += '\n[Info] Library ini tidak tersedia offline. Hanya modul bawaan (stdlib) Python yang didukung.';
   }
   if (msg.indexOf('EOFError') >= 0) {
