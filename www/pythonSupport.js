@@ -98,6 +98,10 @@
         if (/\.py$/i.test((mod.uri && mod.uri.path) || '') && mod.getLanguageId() === 'plaintext') {
           m.editor.setModelLanguage(mod, 'python');
         }
+        if (/\.py$/i.test((mod.uri && mod.uri.path) || '') && !mod.__psPyOpts) {
+          mod.__psPyOpts = true;
+          mod.updateOptions({ insertSpaces: true, tabSize: 4 });
+        }
       });
     }
     var ed = getEditor();
