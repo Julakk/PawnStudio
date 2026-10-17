@@ -14,6 +14,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(BulkImportPlugin.class);
         registerPlugin(NodeRunnerPlugin.class);
         registerPlugin(DeviceCheckPlugin.class);
+        registerPlugin(GeminiPlugin.class);
         registerPlugin(LibraryPlugin.class);
         super.onCreate(savedInstanceState);
     }
